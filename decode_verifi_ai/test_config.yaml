@@ -1,0 +1,76 @@
+# test_config.yaml - 测试配置文件
+# 用于定义不同测试场景的参数
+
+test_scenarios:
+  basic_sanity:
+    description: "基本功能测试"
+    tests:
+      - decode_rtype_test
+      - decode_itype_test
+    num_transactions: 50
+    verbosity: UVM_MEDIUM
+    
+  register_focused:
+    description: "寄存器文件重点测试"
+    tests:
+      - decode_regfile_test
+    num_transactions: 100
+    verbosity: UVM_HIGH
+    
+  instruction_coverage:
+    description: "指令覆盖测试"
+    tests:
+      - decode_rtype_test
+      - decode_itype_test
+      - decode_branch_test
+      - decode_jump_test
+      - decode_loadstore_test
+    num_transactions: 200
+    verbosity: UVM_MEDIUM
+    
+  stress_test:
+    description: "压力测试"
+    tests:
+      - decode_random_test
+    num_transactions: 1000
+    verbosity: UVM_LOW
+    
+  full_regression:
+    description: "完整回归测试"
+    tests:
+      - decode_comprehensive_test
+    num_transactions: 500
+    verbosity: UVM_MEDIUM
+
+# 仿真器特定配置
+simulator_config:
+  questa:
+    compile_flags: "+incdir+../RISC-V +incdir+. -timescale=1ns/1ps"
+    sim_flags: "-c -do \"run -all; quit -f\""
+    gui_flags: ""
+    
+  vcs:
+    compile_flags: "+incdir+../RISC-V +incdir+. -sverilog +v2k -Mupdate -debug_all"
+    sim_flags: "+vcs+lic+wait"
+    gui_flags: "-gui"
+    
+  xcelium:
+    compile_flags: "+incdir+../RISC-V +incdir+. -sv"
+    sim_flags: ""
+    gui_flags: "-gui"
+
+# 覆盖率配置
+coverage:
+  functional:
+    enable: true
+    groups:
+      - instruction_types
+      - register_combinations
+      - immediate_values
+      - control_signals
+      
+  code:
+    enable: true
+    exclude_files:
+      - "*_tb.sv"
+      - "*_pkg.sv"
