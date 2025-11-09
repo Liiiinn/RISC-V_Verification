@@ -25,10 +25,10 @@ class decode_item extends uvm_sequence_item;
     logic [31:0] read_data2;
     logic [31:0] immediate_data;
     control_type control_signals;
-    logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];
-    // Input signals (will be driven by driver)
+    logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];    // Input signals (will be driven by driver)
     rand instruction_type instruction;
     rand int unsigned write_en;
+    rand logic [4:0] write_id;
     randc logic [31:0] write_data;
     rand logic branch_in;
     rand logic [31:0] pc;
@@ -127,10 +127,13 @@ class decode_item extends uvm_sequence_item;
         instruction[19:12] == imm_20bit[7:0]; // imm[19:12]
 
    }
-   }
-   constraint pc_constraint {
+   }   constraint pc_constraint {
     pc[1:0] == 2'b00;
     pc inside {[32'h0000_0000:32'h0000_FFFC]};
+   }
+
+   constraint write_id_constraint {
+    write_id inside {[0:31]};
    }
 
 

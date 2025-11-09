@@ -33,14 +33,14 @@ class decode_random_sequence extends decode_base_sequence;
     endfunction
     constraint write_en_c {
         write_en dist{
-            0 /= 3,
-            1 /= 1
+            0 :/ 3,
+            1 :/ 1
         }
     }
     constraint branch_in_c{
         branch_in dist{
-            0 /= 3,
-            1 /= 1
+            0 :/ 3,
+            1 :/ 1
         }
     }
 

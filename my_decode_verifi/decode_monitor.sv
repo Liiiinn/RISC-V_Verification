@@ -3,53 +3,67 @@
 `define DECODE_MONITOR_SV
 
 import uvm_pkg::*;
+import common::*;
 `include "uvm_macros.svh"
 
 class decode_monitor extends uvm_monitor;
     
     `uvm_component_utils(decode_monitor)
-    
-    virtual decode_interface vif;
-    uvm_analysis_port #(decode_item) analysis_port;
-    
-    function new(string name = "decode_monitor", uvm_component parent);
+    decode_config m_config;
+    uvm_analysis_port #(decode_item) m_analysis_port;    
+    function new(string name = "decode_monitor", uvm_component parent = null);
         super.new(name, parent);
-        analysis_port = new("analysis_port", this);
-    endfunction
-    
-    virtual function void build_phase(uvm_phase phase);
-        super.build_phase(phase);
-        
-        if (!uvm_config_db#(virtual decode_interface)::get(this, "", "decode_vif", vif)) begin
-            `uvm_fatal("MONITOR", "Could not get virtual interface")
+        if (!uvm_config_db#(decode_config)::get(this, "", "decode_config", m_config)) begin
+            `uvm_fatal(get_name(), "Could not get decode_config")
         end
+        m_analysis_port = new("m_analysis_port", this);
     endfunction
     
-    virtual task run_phase(uvm_phase phase);
-        decode_item item;
-        
-        wait(vif.reset_n);
-        
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+    endfunction
+      task run_phase(uvm_phase phase);
         forever begin
-            @(vif.monitor_cb);
+            decode_item item;
             
-            // Create new item and capture all signals
-            item = decode_item::type_id::create("item");
+            // Wait for reset deassertion
+            wait(m_config.m_vif.reset_n);
+            `uvm_info(get_name(), "Reset released, starting monitoring", UVM_HIGH);
             
-            // task12: Capture inputs
-            item.instruction = vif.monitor_cb.instruction;
+            // Monitor transactions while not in reset
+            while(m_config.m_vif.reset_n) begin
+                @(m_config.m_vif.monitor_cb);
+                
+                // Create new item and capture all signals
+                item = decode_item::type_id::create("item");
+                
+                // Capture inputs
+                item.instruction = m_config.m_vif.monitor_cb.instruction;
+                item.pc = m_config.m_vif.monitor_cb.pc;
+                item.write_en = m_config.m_vif.monitor_cb.write_en;
+                item.write_id = m_config.m_vif.monitor_cb.write_id;
+                item.write_data = m_config.m_vif.monitor_cb.write_data;
+                item.branch_in = m_config.m_vif.monitor_cb.branch_in;
+                
+                // Capture outputs
+                item.branch_out = m_config.m_vif.monitor_cb.branch_out;
+                item.reg_rd_id  = m_config.m_vif.monitor_cb.reg_rd_id;
+                item.read_data1 = m_config.m_vif.monitor_cb.read_data1;
+                item.read_data2 = m_config.m_vif.monitor_cb.read_data2;
+                item.control_signals = m_config.m_vif.monitor_cb.control_signals;
+                item.immediate_data = m_config.m_vif.monitor_cb.immediate_data;
+                item.pc_out = m_config.m_vif.monitor_cb.pc_out;
 
+                // Copy debug registers
+                for (int i = 0; i < REGISTER_FILE_SIZE; i++) begin
+                    item.debug_reg[i] = m_config.m_vif.monitor_cb.debug_reg[i];
+                end
+                
+                `uvm_info("MONITOR", $sformatf("Captured transaction: %s", item.sprint()), UVM_HIGH)
+                m_analysis_port.write(item);
+            end
             
-            //task 13: Capture outputs
-            item.branch_out = vif.monitor_cb.branch_out;
-
-            
-            //task 14: Copy debug registers
-
-            
-            `uvm_info("MONITOR", $sformatf("Captured transaction: %s", item.sprint()), UVM_HIGH)
-            
-            analysis_port.write(item);
+            `uvm_info(get_name(), "Reset detected, pausing monitoring", UVM_HIGH);
         end
     endtask
     

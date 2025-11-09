@@ -52,17 +52,16 @@ interface decode_interface(input logic clk, input logic reset_n);
         input immediate_data;
         input control_signals;
         input debug_reg;
-    endclocking
-
-    //task 19: Complete Modports 
+    endclocking    //task 19: Complete Modports 
     modport driver_mp(clocking driver_cb, input clk, input reset_n);
-    modport monitor_mp();
+    modport monitor_mp(clocking monitor_cb, input clk, input reset_n);
     modport dut_mp(
         input clk, input reset_n,
         input instruction, input pc, input write_en, 
         input write_id, input write_data, input branch_in,
         output branch_out, output reg_rd_id, output pc_out,
-
+        output read_data1, output read_data2, output immediate_data,
+        output control_signals, output debug_reg
     );
     
 endinterface
