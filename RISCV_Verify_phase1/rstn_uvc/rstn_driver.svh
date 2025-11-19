@@ -25,7 +25,14 @@ class rst_driver extends uvm_driver #(rstn_seq_item);
         if(seq_item.rstn_delay > 0) begin
            @(posedge m_config.m_vif.clk);
         end
-        
+      m_config.m_vif.rstn <= 0;
+      `uvm_info(get_name(), "Activating RSTN", UVM_FULL)
+      for(int mm=0; mm< seq_item.rst_length; mm++) begin
+         @(posedge m_config.m_vif.clk);
+      end
+      m_config.m_vif.rstn <= 1;
+      `uvm_info(get_name(), "Deactivating RSTN", UVM_FULL)
+       seq_item_port.put(seq_item);
     end
  endtask :run_phase
 

@@ -6,15 +6,15 @@ import uvm_pkg::*;
 import common::*;
 `include "uvm_macros.svh"
 
-class decode_monitor extends uvm_monitor;
-    
-    `uvm_component_utils(decode_monitor)
-    decode_config m_config;
-    uvm_analysis_port #(decode_item) m_analysis_port;    
-    function new(string name = "decode_monitor", uvm_component parent = null);
+class id_monitor extends uvm_monitor;
+
+    `uvm_component_utils(id_monitor)
+    id_config m_config;
+    uvm_analysis_port #(id_seq_item) m_analysis_port;
+    function new(string name = "id_monitor", uvm_component parent = null);
         super.new(name, parent);
-        if (!uvm_config_db#(decode_config)::get(this, "", "decode_config", m_config)) begin
-            `uvm_fatal(get_name(), "Could not get decode_config")
+        if (!uvm_config_db#(id_config)::get(this, "", "id_config", m_config)) begin
+            `uvm_fatal(get_name(), "Could not get id_config")
         end
         m_analysis_port = new("m_analysis_port", this);
     endfunction
@@ -24,7 +24,7 @@ class decode_monitor extends uvm_monitor;
     endfunction
       task run_phase(uvm_phase phase);
         forever begin
-            decode_item item;
+            id_item item;
             
             // Wait for reset deassertion
             wait(m_config.m_vif.reset_n);
@@ -35,7 +35,7 @@ class decode_monitor extends uvm_monitor;
                 @(m_config.m_vif.monitor_cb);
                 
                 // Create new item and capture all signals
-                item = decode_item::type_id::create("item");
+                item = id_seq_item::type_id::create("item");
                 
                 // Capture inputs
                 item.instruction = m_config.m_vif.monitor_cb.instruction;

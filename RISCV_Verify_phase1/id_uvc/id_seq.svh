@@ -45,11 +45,11 @@ class id_seq_random_sequence extends id_seq_base_sequence;
     }
 
     virtual task body();
-        decode_item req;
+        id_seq_item req;
         //? repeat or not?
         repeat (num_transactions) begin
-            req = decode_item::type_id::create("req");
-            
+            req = id_seq_item::type_id::create("req");
+
             start_item(req);
             if (!req.randomize() with{
                 req.pc == local::pc;
