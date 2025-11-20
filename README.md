@@ -6,5 +6,6 @@ To be done:
 |FTY|scoreboard, reference model|
 |KXL|tb_test, tb_top, tb_env|
 
+id_driver task order(wb first, then read)
 
 When programming, you can also keep an eye on the whole structure (maybe you can find some bugs) ;
