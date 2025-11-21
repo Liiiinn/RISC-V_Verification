@@ -36,6 +36,7 @@ class id_seq_item extends uvm_sequence_item;
     randc logic [2:0] funct3;
     randc logic [6:0] funct7;
     randc logic [19:0] imm_20bit;
+    
 
    constraint instr_type_distribution {
         instr_type dist {
@@ -139,7 +140,7 @@ class id_seq_item extends uvm_sequence_item;
 
     //task 18: complete UVM macros :instruction, pc, write_en, write_id, write_data,
     // branch_in, branch_out, reg_rd_id, pc_out, read_data1, read_data2, immediate_data, control_signals
-        `uvm_object_utils_begin(decode_item)
+        `uvm_object_utils_begin(id_seq_item)
         `uvm_field_int(instruction, UVM_ALL_ON|UVM_DEC)
         `uvm_field_int(pc, UVM_ALL_ON|UVM_DEC)
         `uvm_field_int(write_en, UVM_ALL_ON|UVM_DEC)
