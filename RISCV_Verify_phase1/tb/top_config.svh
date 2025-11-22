@@ -3,7 +3,7 @@ class top_config extends uvm_object;
 
  //clock_configuration instance for clock agent 
  clk_config m_clk_config;
- rstn_config m_reset_config;
+ rstn_config m_rstn_config;
  id_config m_id_config;
  
  
