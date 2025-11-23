@@ -28,9 +28,9 @@ class id_test extends base_test;
     //------------------------------------------------------------------------------
     virtual task run_phase(uvm_phase phase);
         // Set number data transactions
-        no_of_data_loop = 80;
+        no_of_data = 80;
         // Run the test as defined in base test
         super.run_phase(phase);
     endtask : run_phase
 
-endclass : parity_test
+endclass : id_test

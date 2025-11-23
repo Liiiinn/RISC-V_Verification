@@ -6,6 +6,9 @@ To be done:
 |FTY|scoreboard, reference model|
 |KXL|tb_test, tb_top, tb_env|
 
+Note: 1. tb_test is named as id_test here (id testing task)
+      2. In base_test.svh, reset occurs only once. Maybe several resets needed.
+
 id_driver task order(wb first, then read)
 
 When programming, you can also keep an eye on the whole structure (maybe you can find some bugs) ;
