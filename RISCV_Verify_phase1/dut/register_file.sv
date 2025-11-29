@@ -18,7 +18,7 @@ module register_file(
     
     logic [31:0] registers [0:REGISTER_FILE_SIZE-1] = '{default:0};
    
-   assign debug_reg  =  registers;
+    assign debug_reg  =  registers;
  
     
     
@@ -27,21 +27,21 @@ module register_file(
             registers <= '{default:0};
         end 
         else if (write_en) begin
-	   if (~|write_id) begin	      
-              registers[write_id] <= '0;  // x0 always remain 0;
-	   end
-	   else begin
-              registers[write_id] <= write_data;
-	   end
+            if (~|write_id) begin	      
+                registers[write_id] <= '0;  // x0 always remain 0;
+            end
+            else begin
+                registers[write_id] <= write_data;
+            end
         end
     end
 
 
     assign read1_data = (read1_id == 0) ?0 : 
 			(read1_id == write_id) ? write_data:
-			            registers[read1_id];
+			    registers[read1_id];
     assign read2_data = (read2_id == 0) ? 0 :
 			(read2_id == write_id) ? write_data:
-			            registers[read2_id];
+			    registers[read2_id];
 
 endmodule

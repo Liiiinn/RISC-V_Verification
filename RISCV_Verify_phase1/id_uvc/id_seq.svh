@@ -59,7 +59,7 @@ class id_seq_random_sequence extends id_seq_base_sequence;
                 req.branch_in == local::branch_in;
             }) `uvm_fatal(get_name(), "Randomization failed");
             finish_item(req);
-          //  get_response(rsp, req.get_transaction_id());
+            //  get_response(rsp, req.get_transaction_id());
 
             #100;
         end

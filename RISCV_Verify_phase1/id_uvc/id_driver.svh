@@ -7,7 +7,7 @@ import uvm_pkg::*;
 
 class id_driver extends uvm_driver #(decode_item);   
     `uvm_component_utils(id_driver)
-     id_config m_config;
+    id_config m_config;
     
     function new(string name, uvm_component parent = null);
         super.new(name, parent);
