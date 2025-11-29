@@ -9,7 +9,7 @@ module control_unit(
     input instruction_type instruction, 
     output control_type control
 );
-// OPCODE DECODE 
+    // OPCODE DECODE 
     localparam [6:0] OP_LUI     = 7'b011_0111 ;  // 0x37
     localparam [6:0] OP_AUIPC   = 7'b001_0111 ;  // 0x17
     localparam [6:0] OP_JAL     = 7'b110_1111 ;  // 0x6F

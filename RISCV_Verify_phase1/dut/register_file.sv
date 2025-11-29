@@ -11,7 +11,7 @@ module register_file(
     input [31:0] write_data,
     output logic [31:0] read1_data,
     output logic [31:0] read2_data,
-    output logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1]
+    output logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1] // A debug port to view all registers
 );
 
     //parameter REGISTER_FILE_SIZE = 32;
@@ -27,7 +27,7 @@ module register_file(
             registers <= '{default:0};
         end 
         else if (write_en) begin
-            if (~|write_id) begin	      
+            if (~|write_id) begin	   // write_id == 0
                 registers[write_id] <= '0;  // x0 always remain 0;
             end
             else begin

@@ -4,7 +4,7 @@ import uvm_pkg::*;
 
 class id_ref_model extends uvm_component;
  	uvm_analysis_imp #(id_seq_item,id_ref_model) analysis_imp;
- 	uvm_analysis_port #(id_seq_item) id_ref_ap;
+ 	uvm_analysis_port #(id_out_seq_item) id_ref_ap;
  	`uvm_component_utils(id_ref_model)
 
 	function new(string name, uvm_component parent);
@@ -13,21 +13,18 @@ class id_ref_model extends uvm_component;
 	  	id_ref_ap = new("id_ref_ap", this);
 	endfunction
 
-	function void write(id_seq_item,item);
+	function void write(id_seq_item item);
 	  	id_seq_item exp = id_seq_item::type_id::create("exp");
 	  	exp.instr = item.instr;
 	  	decode_instr(exp); // decode;
 	  	id_ref_ap.write(exp);
 	endfunction 
 
-
 	function void decode_instr(id_decode_tr tr);
-
 	  	logic[6:0] opcode= tr.instr[6:0];
 	  	logic[2:0] funct3 = tr.instr[14:12];
 	  	logic[6:0] funct7 = tr.instr[31:25];
 
-	
 	  	tr.rs1 = tr.instr[19:15];
 	  	tr.rs2 = tr.instr[24:20];
 	  	tr.rd = tr.instr[11:7];
