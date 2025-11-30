@@ -10,6 +10,7 @@ Note:
 1. tb_test of id is named as id_test here. 
 2. In base_test.svh, reset occurs only once. Maybe more are needed.  
 3. To be done in **reference model**: a) merge two files; b) check the logic.  
+4. **scoreboard** a) covergroup has been splited, compare() needs to be modified.
 
 id_driver task order(wb first, then read)
 
