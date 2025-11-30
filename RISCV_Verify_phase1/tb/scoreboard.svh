@@ -130,8 +130,24 @@ class id_scoreboard extends uvm_component;
             bins data2_neg = {[-1:-2147483648]};
         };
         // control signals covergroup
-        alu_op_cp : coverpoint control_signals.alu_op{
-            bins alu_op_default = default;
+        alu_cp : coverpoint control_signals.alu_op{
+            bins alu_op_ADD = {ALU_ADD};
+            bins alu_op_SUB = {ALU_SUB};
+            bins alu_op_SLL = {ALU_SLL};
+            bins alu_op_SLT = {ALU_SLT};
+            bins alu_op_SLTU = {ALU_SLTU};
+            bins alu_op_XOR = {ALU_XOR};
+            bins alu_op_OR = {ALU_OR};
+            bins alu_op_AND = {ALU_AND};
+            bins alu_op_SRL = {ALU_SRL};
+            bins alu_op_SRA = {ALU_SRA};
+            bins alu_op_MUL = {ALU_MUL};
+            bins alu_op_DIV = {ALU_DIV};
+            bins alu_op_DIVU = {ALU_DIVU};
+            bins alu_op_REM = {ALU_REM};
+            bins alu_op_REMU = {ALU_REMU};
+            bins alu_op_PASS = {ALU_PASS};
+            bins alu_op_MULH = {ALU_MULH};
         };
         alu_src_cp : coverpoint control_signals.alu_src{
             bins alu_src_0 = {0};
