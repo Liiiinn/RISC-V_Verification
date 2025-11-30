@@ -1,11 +1,11 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import common::*;
+
 `uvm_analysis_imp_decl(_scoreboard_rstn) //extent to uvm_analysis_imp_scoreboard_rstn #(T, IMP)
 `uvm_analysis_imp_decl(_scoreboard_id)
 `uvm_analysis_imp_decl(_scoreboard_exp_id_out)
 `uvm_analysis_imp_decl(_scoreboard_act_id_out)
-
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-import common::*;
 
 class id_scoreboard extends uvm_component;
     `uvm_component_utils(id_scoreboard)
@@ -17,7 +17,9 @@ class id_scoreboard extends uvm_component;
     virtual clk_if vif;
     clk_config m_clk_config;
     
-    //输入数据的方式有何不同？？
+    // Queues to store transactions
+    // Write_* functions will push_back transactions into these queues
+    // Compare task will pop_front transactions from these queues for comparison
     id_out_seq_item exp_out_q[$];
     id_out_seq_item act_out_q[$];
     id_seq_item act_in_q[$];
@@ -31,10 +33,13 @@ class id_scoreboard extends uvm_component;
     bit [4:0]write_id;
     bit branch_in;
     bit [31:0]pc;
-        // details inside
+        // details inside instruction_type
     bit opcode;
     bit [2:0] funct3;
     bit [6:0] funct7;
+    bit [4:0] rd;
+    bit [4:0] rs1;
+    bit [4:0] rs2;
 
     // output variables bound to coverage
     bit[4:0] reg_rd_id;
@@ -45,11 +50,26 @@ class id_scoreboard extends uvm_component;
 
 
 
-    covergroup id_covergroup@(posedge vif.clk);
-        reset: coverpoint reset_n {
+    covergroup id_in_covergroup @(posedge vif.clk);
+        reset_cp: coverpoint reset_n {
             bins reset = {0};
             bins run = {1};
         };
+        write_enable_cp: coverpoint write_en{
+            bins write = {1};
+            bins no_write = {0};
+        };
+        write_data_cp: coverpoint write_data{
+            // Idea: 可能还需要考虑特殊数据
+            bins data_0 = {0};
+            bins data_pos = {[1:$]};
+            bins data_neg = {[-1:-2147483648]};
+        };
+        write_id_cp : coverpoint write_id{
+            bins id_0 = {0};
+            bins id_legal[] = {[1:31]};
+        };
+        // instruction fields coverage
         opcode_cp: coverpoint opcode {
             bins R_type = {7'b0110011};
             bins I_type = {7'b0010011, 7'b0000011, 7'b1100111};
@@ -67,39 +87,51 @@ class id_scoreboard extends uvm_component;
             bins funct3_101 = {3'b101};
             bins funct3_110 = {3'b110};
             bins funct3_111 = {3'b111};
-        }
+        };
         funct7_cp : coverpoint funct7{
             bins funct7_0000000 = {7'b0000000};
             bins funct7_0100000 = {7'b0100000};
             bins funct7_0000001 = {7'b0000001};
         };
-        rd_cp : coverpoint reg_rd_id{
-            bins regs[] = {[1:31]};
-        }
+        rd_cp : coverpoint rd{
+            bins rd_0 = {0};
+            bins rd_id[] = {[1:31]};
+        };
+        rs1_cp : coverpoint rs1{
+            bins rs1_0 = {0};
+            bins rs1_id[] = {[1:31]};
+        };
+        rs2_cp : coverpoint rs2{
+            bins rs2_0 = {0};
+            bins rs2_id[] = {[1:31]};
+        };
+    endgroup: id_in_covergroup
+
+    covergroup id_out_covergroup @(posedge vif.clk);
         // deocde ouput coverage:
-
-        // im_cp : coverpoint immediate_data{
-
-        // };
-        //control signals covergroup
-        alu_cp : coverpoint control_signals.alu_op{
-            bins alu_op_ADD = {ALU_ADD};
-            bins alu_op_SUB = {ALU_SUB};
-            bins alu_op_SLL = {ALU_SLL};
-            bins alu_op_SLT = {ALU_SLT};
-            bins alu_op_SLTU = {ALU_SLTU};
-            bins alu_op_XOR = {ALU_XOR};
-            bins alu_op_OR = {ALU_OR};
-            bins alu_op_AND = {ALU_AND};
-            bins alu_op_SRL = {ALU_SRL};
-            bins alu_op_SRA = {ALU_SRA};
-            bins alu_op_MUL = {ALU_MUL};
-            bins alu_op_DIV = {ALU_DIV};
-            bins alu_op_DIVU = {ALU_DIVU};
-            bins alu_op_REM = {ALU_REM};
-            bins alu_op_REMU = {ALU_REMU};
-            bins alu_op_PASS = {ALU_PASS};
-            bins alu_op_MULH = {ALU_MULH};
+        im_cp : coverpoint immediate_data{
+            // Idea: 可能还需要考虑mul和div的溢出
+            bins imm_0 = {0};
+            bins imm_pos = {[1:$]};
+            bins imm_neg = {[-1:-2147483648]};
+        };
+        reg_rd_id_cp : coverpoint reg_rd_id{
+            bins rd_0 = {0};
+            bins rd_id[] = {[1:31]};
+        };
+        read_data1_cp : coverpoint read_data1{
+            bins data1_0 = {0};
+            bins data1_pos = {[1:$]};
+            bins data1_neg = {[-1:-2147483648]};
+        };
+        read_data2_cp : coverpoint read_data2{
+            bins data2_0 = {0};
+            bins data2_pos = {[1:$]};
+            bins data2_neg = {[-1:-2147483648]};
+        };
+        // control signals covergroup
+        alu_op_cp : coverpoint control_signals.alu_op{
+            bins alu_op_default = default;
         };
         alu_src_cp : coverpoint control_signals.alu_src{
             bins alu_src_0 = {0};
@@ -132,7 +164,7 @@ class id_scoreboard extends uvm_component;
         jumpr_cp : coverpoint control_signals.is_jumpr{
             bins is_jumpr_0 = {0};
             bins is_jumpr_1 = {1};
-        };  
+        };
         lui_cp : coverpoint control_signals.is_lui{
             bins is_lui_0 = {0};
             bins is_lui_1 = {1};
@@ -145,23 +177,12 @@ class id_scoreboard extends uvm_component;
             bins is_mul_0 = {0};
             bins is_mul_1 = {1};
         };
+    endgroup: id_out_covergroup
 
-
-        write_enable: coverpoint write_en{
-
-            bins write = {1};
-            bins no_write = {0};
-
-        }
-        branch_in_cp : coverpoint branch_in{
-            bins taken = {1};
-            bins not_taken = {0};
-        };
-    
-
-        //cross coverage
+    covergroup cross_covergroup @(posedge vif.clk);
         write_cross: cross (write_en, write_id);
-    endgroup 
+        // 待补充
+    endgroup: cross_covergroup
 
 
 
@@ -171,7 +192,9 @@ class id_scoreboard extends uvm_component;
         m_exp_id_out_ap = new("m_exp_id_out_ap", this);
         m_act_id_out_ap = new("m_act_id_out_ap", this);
         m_act_id_ap = new("m_act_id_ap",this);
-        id_covergroup = new();
+        id_in_covergroup = new();
+        id_out_covergroup = new();
+        cross_covergroup = new();
     endfunction 
 
     function void build_phase(uvm_phase phase);
@@ -221,10 +244,22 @@ class id_scoreboard extends uvm_component;
                 exp_item = exp_out_q.pop_front();
                 act_item = act_out_q.pop_front();
 
+                // Pass-through signals comparison
+                if (act_item.pc_out == exp_item.pc)
+                    `uvm_info(get_name(), $sformatf("PC passthrough OK: %0h", act_item.pc_out), UVM_HIGH);
+                else
+                    `uvm_error(get_name(), $sformatf("PC mismatch! Expected: %0h, Got: %0h", exp_item.pc, act_item.pc_out), UVM_HIGH);
+                if (act_item.branch_out == exp_item.branch_in)
+                    `uvm_info(get_name(), $sformatf("branch_in passthrough OK: %0b", act_item.branch_out), UVM_HIGH);
+                else
+                    `uvm_error(get_name(), $sformatf("branch_in mismatch! Expected: %0b, Got: %0b", exp_item.branch_in, act_item.branch_out), UVM_HIGH);
+
+                // Input signals comparison?
                 if(exp_item.instr == act_item.instr) begin
                     `uvm_info(get_name(), $sformatf("Instruction match: 0x%0h", exp_item.instr), UVM_HIGH);
-                    id_covergroup.opcode.sample();//trigger opcode coverage sampling
-                end else
+                    id_in_covergroup.opcode.sample();//trigger opcode coverage sampling
+                end
+                else
                     `uvm_error(get_name(), $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h", exp_item.instr, act_item.instr), UVM_HIGH);
                 if(exp_item.reg_rd_id == act_item.reg_rd_id)
                     `uvm_info(get_name(), $sformatf("reg_rd_id match: %0d", exp_item.reg_rd_id), UVM_HIGH);
@@ -254,8 +289,9 @@ class id_scoreboard extends uvm_component;
                 read_data2 = act_item.read_data2;
                 branch_out = act_item.branch_out;
                 pc_out = act_item.pc_out;
-                id_covergroup.sample() ;     
-
+                id_in_covergroup.sample() ;     
+                id_out_covergroup.sample();
+                cross_covergroup.sample();
             end
             else begin
                 @(posedge vif.clk); // wait for some time before checking again
@@ -273,7 +309,9 @@ class id_scoreboard extends uvm_component;
                 write_id = act_in_item.write_id;
                 branch_in = act_in_item.branch_in;
                 pc = act_in_item.pc;
-                id_covergroup.sample();
+                id_in_covergroup.sample();
+                id_out_covergroup.sample();
+                cross_covergroup.sample();
             end
             else begin
                 @(posedge vif.clk); // wait for some time before checking again
@@ -294,13 +332,35 @@ class id_scoreboard extends uvm_component;
         super.check_phase(phase);
     
         $display("*****************************************************");
-        if (id_covergroup.get_coverage() == 100.0) begin
-                $display("FUNCTIONAL COVERAGE (100.0%%) PASSED....");
-            end
+        if (id_in_covergroup.get_coverage() == 100.0) begin
+            $display("INPUT COVERAGE (100.0%%) PASSED....");
+        end
         else begin
-                $display("FUNCTIONAL COVERAGE FAILED!!!!!!!!!!!!!!!!!");
-                $display("Coverage = %0f", id_covergroup.get_coverage());
-            end
+            $display("INPUT COVERAGE FAILED!!!!!!!!!!!!!!!!!");
+            $display("Coverage = %0f", id_in_covergroup.get_coverage());
+        end
+        if (id_out_covergroup.get_coverage() == 100.0) begin
+            $display("OUTPUT COVERAGE (100.0%%) PASSED....");
+        end
+        else begin
+            $display("OUTPUT COVERAGE FAILED!!!!!!!!!!!!!!!!!");
+            $display("Coverage = %0f", id_out_covergroup.get_coverage());
+        end
+        if (cross_covergroup.get_coverage() == 100.0) begin
+            $display("CROSS COVERAGE (100.0%%) PASSED....");
+        end
+        else begin
+            $display("CROSS COVERAGE FAILED!!!!!!!!!!!!!!!!!");
+            $display("Coverage = %0f", cross_covergroup.get_coverage());
+        end
+        $display("*****************************************************");
+        if (id_in_covergroup.get_coverage() == 100.0 && id_out_covergroup.get_coverage() == 100.0 && cross_covergroup..get_coverage() == 100.0) begin
+            $display("FUNCTIONAL COVERAGE (100.0%%) PASSED....");
+        end
+        else begin
+            $display("FUNCTIONAL COVERAGE FAILED!!!!!!!!!!!!!!!!!");
+            $display("SEE DETAILS UPON");
+        end
         $display("*****************************************************");
 
     endfunction

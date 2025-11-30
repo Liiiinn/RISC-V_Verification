@@ -25,6 +25,8 @@ class tb_env extends uvm_env;
     id_out_agent m_id_out_agent;
     // scoreboard scoreboard.
     id_scoreboard   m_id_scoreboard;
+    // reference model
+    id_ref_model    m_id_ref_model;
 
     //------------------------------------------------------------------------------
     // Creates and initializes an instance of this class using the normal
@@ -53,8 +55,9 @@ class tb_env extends uvm_env;
         uvm_config_db #(id_config)::set(this,"m_id_agent*","config", m_top_config.m_id_config);
         m_id_agent = id_agent::type_id::create("m_id_agent",this);
         // Build scoreboard components
-        uvm_config_db #(clk_config)::set(this, "m_scoreboard", "m_clk_config", m_top_config.m_clk_config);
         m_id_scoreboard = id_scoreboard::type_id::create("m_id_scoreboard",this);
+        // Build reference model
+        m_id_ref_model = id_ref_model::type_id::create("m_id_ref_model", this);
     endfunction : build_phase
 
     //------------------------------------------------------------------------------
@@ -64,8 +67,12 @@ class tb_env extends uvm_env;
         super.connect_phase(phase);
         // Making all connection all analysis ports to scoreboard
         m_rstn_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_rstn_ap);
-        m_id_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_id_ap);
-        m_id_out_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_id_out_ap);
+        m_id_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_act_id_ap);
+        m_id_out_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_act_id_out_ap);
+        // Connect reference model output to scoreboard
+        m_id_ref_model.id_ref_ap.connect(m_scoreboard.m_exp_id_out_ap);
+        // Connect id_agent monitor to reference model
+        m_id_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.analysis_imp);
     endfunction : connect_phase
 
 endclass : tb_env
