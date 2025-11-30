@@ -1,6 +1,7 @@
 `uvm_analysis_imp_decl(_scoreboard_rstn) //extent to uvm_analysis_imp_scoreboard_rstn #(T, IMP)
 `uvm_analysis_imp_decl(_scoreboard_id)
-`uvm_analysis_imp_decl(_scoreboard_id_out)
+`uvm_analysis_imp_decl(_scoreboard_exp_id_out)
+`uvm_analysis_imp_decl(_scoreboard_act_id_out)
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
@@ -10,8 +11,8 @@ class id_scoreboard extends uvm_component;
     `uvm_component_utils(id_scoreboard)
     uvm_analysis_imp_scoreboard_rstn #(rstn_seq_item,id_scoreboard) m_rstn_ap;
     uvm_analysis_imp_scoreboard_id #(id_seq_item,id_scoreboard) m_act_id_ap;
-    uvm_analysis_imp_scoreboard_id_out #(id_out_seq_item,id_scoreboard) my_exp_id_out_ap;  // from reference model
-    uvm_analysis_imp_scoreboard_id_out #(id_out_seq_item,id_scoreboard) my_act_id_out_ap;  // from DUT monitor
+    uvm_analysis_imp_scoreboard_exp_id_out #(id_out_seq_item,id_scoreboard) m_exp_id_out_ap;  // from reference model
+    uvm_analysis_imp_scoreboard_act_id_out #(id_out_seq_item,id_scoreboard) m_act_id_out_ap;  // from DUT monitor
 
     virtual clk_if vif;
     clk_config m_clk_config;
@@ -23,6 +24,7 @@ class id_scoreboard extends uvm_component;
     rstn_seq_item rstn_q[$];
 
     // input variables bound to coverage
+    bit reset_n;
     instruction_type instr;
     bit write_en;
     bit [31:0]write_data;
@@ -40,11 +42,11 @@ class id_scoreboard extends uvm_component;
     control_type control_signals;
     bit branch_out;
     bit [31:0] pc_out;
-    bit rstn_value; //这是什么？
+
 
 
     covergroup id_covergroup@(posedge vif.clk);
-        reset: coverpoint rstn_value {
+        reset: coverpoint reset_n {
             bins reset = {0};
             bins run = {1};
         };
@@ -150,9 +152,9 @@ class id_scoreboard extends uvm_component;
     function new(string name = "id_scoreboard", uvm_component parent = null);
         super.new(name,parent);
         m_rstn_ap = new("m_rstn_ap", this);
-        my_exp_id_out_ap = new("my_exp_id_out_ap", this);
-        my_act_id_out_ap = new("my_act_id_out_ap", this);
-        my_actin_id_ap = new("my_actin_id_ap",this)
+        m_exp_id_out_ap = new("m_exp_id_out_ap", this);
+        m_act_id_out_ap = new("m_act_id_out_ap", this);
+        m_act_id_ap = new("m_act_id_ap",this);
         id_covergroup = new();
     endfunction 
 
@@ -170,27 +172,28 @@ class id_scoreboard extends uvm_component;
         super.connect_phase(phase);
     endfunction
 
-// monitor DUT reset transaction
-    virtual function void write(m_rstn_ap, rstn_seq_item, rstn_item);
-        `uvm_info(get_name(),$sformat("Received reset transaction:\n%s",rstn_item.sprint()),UVM_HIGH);
-        rstn_q.push_back(rstn_item);
-    endfunction
-// monitor DUT inputs transaction
-    virtual function void write_scoreboard_id(id_seq_item t); 
-        `uvm_info(get_name(), $sformat("Received DUT inputs transanction :\n%s", act_in_item.sprint()), UVM_HIGH);
-        act_in_q.push_back(act_in_item);
+    // monitor DUT reset transaction
+    function void write_scoreboard_rstn(rstn_seq_item t);
+        `uvm_info(get_name(), $sformatf("Received reset transaction:\n%s", t.sprint()), UVM_HIGH);
+        rstn_q.push_back(t);
     endfunction
 
-// receive expected transaction from reference model
-    virtual function void write(my_exp_id_out_ap,id_seq_out_item exp_item);
-        `uvm_info(get_name(), $sformatf("Received expected transaction: \n%s", exp_item.sprint()), UVM_HIGH);
-        exp_out_q.push_back(exp_item);
+    // monitor DUT inputs transaction
+    function void write_scoreboard_id(id_seq_item t); 
+        `uvm_info(get_name(), $sformat("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
+        act_in_q.push_back(t);
+    endfunction
+
+    // receive expected transaction from reference model
+    function void write_scoreboard_exp_id_out(id_out_seq_item t);
+        `uvm_info(get_name(), $sformatf("Received expected transaction: \n%s", t.sprint()), UVM_HIGH);
+        exp_out_q.push_back(t);
     endfunction 
 
-// receive actual transaction from  DUT monitor
-    virtual function void write(my_act_id_out_ap,id_seq_out_item act_item);
-        `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", act_item.sprint()), UVM_HIGH);
-        act_out_q.push_back(act_item);
+    // receive actual transaction from  DUT monitor
+    function void write_scoreboard_act_id_out(id_out_seq_item t);
+        `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", t.sprint()), UVM_HIGH);
+        act_out_q.push_back(t);
     endfunction
 
 
@@ -257,7 +260,7 @@ class id_scoreboard extends uvm_component;
                 id_covergroup.sample();
             end
             else begin
-                @(posedge m_env.vif.clk); // wait for some time before checking again
+                @(posedge vif.clk); // wait for some time before checking again
             end
         end
     endtask
