@@ -169,44 +169,44 @@ package common;
        
     } hazard_control_type;
 
-   function [31:0] immediate_extension(instruction_type instruction, encoding_type inst_encoding);
-    case (inst_encoding)
-        // I-type 立即�? (12-bit sign-extended)
-        I_TYPE: immediate_extension = { {20{instruction[31]}}, instruction[31:20] };
-        
-        // S-type 立即�? (store, 12-bit sign-extended)
-        S_TYPE: immediate_extension = { {20{instruction[31]}}, instruction[31:25], instruction[11:7] };
-        
-        // B-type 立即�? (branch, 13-bit sign-extended, 左移 1 �?)
-        B_TYPE: immediate_extension = { {19{instruction[31]}}, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0 };
-        
-        // U-type 立即�? (upper immediate, 32-bit 左移 12 �?)
-        U_TYPE: immediate_extension = { instruction[31:12], 12'b0 };
-        
-        // J-type 立即�? (jump, 21-bit sign-extended, 左移 1 �?)
-        J_TYPE: immediate_extension = { {11{instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0 };
-        
-        // 默认情况（防�? latch�?
-        default: immediate_extension = 32'b0;
-    endcase
-endfunction
+    function [31:0] immediate_extension(instruction_type instruction, encoding_type inst_encoding);
+        case (inst_encoding)
+            // I-type 立即�? (12-bit sign-extended)
+            I_TYPE: immediate_extension = { {20{instruction[31]}}, instruction[31:20] };
+            
+            // S-type 立即�? (store, 12-bit sign-extended)
+            S_TYPE: immediate_extension = { {20{instruction[31]}}, instruction[31:25], instruction[11:7] };
+            
+            // B-type 立即�? (branch, 13-bit sign-extended, 左移 1 �?)
+            B_TYPE: immediate_extension = { {19{instruction[31]}}, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0 };
+            
+            // U-type 立即�? (upper immediate, 32-bit 左移 12 �?)
+            U_TYPE: immediate_extension = { instruction[31:12], 12'b0 };
+            
+            // J-type 立即�? (jump, 21-bit sign-extended, 左移 1 �?)
+            J_TYPE: immediate_extension = { {11{instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0 };
+            
+            // 默认情况（防�? latch�?
+            default: immediate_extension = 32'b0;
+        endcase
+    endfunction
 
-   function logic if_branch_taken (logic [1:0] biomd);
-      case(biomd)
-	2'b11 : if_branch_taken = 1;
-	2'b10 : if_branch_taken = 1;
-	2'b01 : if_branch_taken = 0;
-	2'b00 : if_branch_taken = 0;
-      endcase
+    function logic if_branch_taken (logic [1:0] biomd);
+        case(biomd)
+            2'b11 : if_branch_taken = 1;
+            2'b10 : if_branch_taken = 1;
+            2'b01 : if_branch_taken = 0;
+            2'b00 : if_branch_taken = 0;
+        endcase
 
-   endfunction // if_branch_taken
+    endfunction // if_branch_taken
 
-   function [GSHARE_PHT_WIDTH-1:0] gshare_hash(
-    input logic [GSHARE_GHSR_WIDTH-1:0] GHSR,
-    input logic [XLEN_WIDTH-1 :0] branch_pc
-);
-    gshare_hash = GHSR ^ branch_pc[GSHARE_PHT_WIDTH+1:2]; //drop low 2 bit
-endfunction
+    function [GSHARE_PHT_WIDTH-1:0] gshare_hash(
+        input logic [GSHARE_GHSR_WIDTH-1:0] GHSR,
+        input logic [XLEN_WIDTH-1 :0] branch_pc
+    );
+        gshare_hash = GHSR ^ branch_pc[GSHARE_PHT_WIDTH+1:2]; //drop low 2 bit
+    endfunction
  
 
    
