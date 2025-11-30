@@ -76,7 +76,7 @@ class base_test extends uvm_test;
                 if (!id.randomize()) begin
                     `uvm_fatal(get_name(), "Failed to randomize id inputs.")
                 end
-                id.start(m_tb_env.m_parallel_data_agent.m_sequencer);
+                id.start(m_tb_env.m_id_agent.m_sequencer);
             end
         end
         

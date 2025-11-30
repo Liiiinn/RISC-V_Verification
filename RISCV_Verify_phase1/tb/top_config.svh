@@ -23,8 +23,8 @@ class top_config extends uvm_object;
  	  	m_id_config.has_monitor = 1;
 
  	  	m_id_out_config = new("m_id_out_config");
- 	   m_id_out_config.is_active = 1;
- 	   m_id_out_config.has_monitor = 1;
+ 	    m_id_out_config.is_active = 0;   // passive agent
+ 	    m_id_out_config.has_monitor = 1;
 
  	endfunction : new
 
