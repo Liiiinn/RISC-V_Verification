@@ -98,8 +98,8 @@ module tb_top;
 
     // Initialize TB configuration
     initial begin
-        top_config  m_top_config;
         // Create TB top configuration and store it into UVM config DB.
+        top_config  m_top_config;
         m_top_config = new("m_top_config");
         uvm_config_db #(top_config)::set(null,"tb_top","top_config", m_top_config);
         // Save all virtual interface instances into configuration

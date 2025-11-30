@@ -1,5 +1,6 @@
-`uvm_analysis_imp_decl(_scoreboard_reset)
+`uvm_analysis_imp_decl(_scoreboard_rstn) //extent to uvm_analysis_imp_scoreboard_rstn #(T, IMP)
 `uvm_analysis_imp_decl(_scoreboard_id)
+`uvm_analysis_imp_decl(_scoreboard_id_out)
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
@@ -7,14 +8,18 @@ import common::*;
 
 class id_scoreboard extends uvm_component;
     `uvm_component_utils(id_scoreboard)
-    uvm_analysis_imp #(rstn_seq_item,id_scoreboard) m_rstn_ap;
-    uvm_analysis_imp #(id_seq_item,id_scoreboard)m_act_inid_ap;
-    uvm_analysis_imp #(id_seq_out_item,id_scoreboard) my_exp_id_ap;
-    uvm_analysis_imp #(id_seq_out_item,id_scoreboard) my_act_id_ap;
+    uvm_analysis_imp_scoreboard_rstn #(rstn_seq_item,id_scoreboard) m_rstn_ap;
+    uvm_analysis_imp_scoreboard_id #(id_seq_item,id_scoreboard) m_act_id_ap;
+    uvm_analysis_imp_scoreboard_id_out #(id_out_seq_item,id_scoreboard) my_exp_id_out_ap;  // from reference model
+    uvm_analysis_imp_scoreboard_id_out #(id_out_seq_item,id_scoreboard) my_act_id_out_ap;  // from DUT monitor
+
+    virtual clk_if vif;
+    clk_config m_clk_config;
+    
     //输入数据的方式有何不同？？
-    id_seq_out_item exp_q[$];
-    id_seq_out_item act_q[$];
-    id_seq_item actin_q[$];
+    id_out_seq_item exp_out_q[$];
+    id_out_seq_item act_out_q[$];
+    id_seq_item act_in_q[$];
     rstn_seq_item rstn_q[$];
 
     // input variables bound to coverage
@@ -24,18 +29,18 @@ class id_scoreboard extends uvm_component;
     bit [4:0]write_id;
     bit branch_in;
     bit [31:0]pc;
-    bit opcode;// details inside 
-    bit [2:0] funct3; //details inside
-    bit [6:0] funct7; // details inside
-    // output variables bound to coverage
+        // details inside
+    bit opcode;
+    bit [2:0] funct3;
+    bit [6:0] funct7;
 
-    bit[4:0] rd;
-    bit[31:0] imm,read1,read2;
+    // output variables bound to coverage
+    bit[4:0] reg_rd_id;
+    bit[31:0] immediate_data,read_data1,read_data2;
     control_type control_signals;
     bit branch_out;
     bit [31:0] pc_out;
-    bit rstn_value;
-
+    bit rstn_value; //这是什么？
 
 
     covergroup id_covergroup@(posedge vif.clk);
@@ -66,12 +71,12 @@ class id_scoreboard extends uvm_component;
             bins funct7_0100000 = {7'b0100000};
             bins funct7_0000001 = {7'b0000001};
         };
-        rd_cp : coverpoint rd{
+        rd_cp : coverpoint reg_rd_id{
             bins regs[] = {[1:31]};
         }
         // deocde ouput coverage:
 
-        im_cp : coverpoint imm{
+        im_cp : coverpoint immediate_data{
 
         };
         //control signals covergroup
@@ -138,7 +143,6 @@ class id_scoreboard extends uvm_component;
 
         //cross coverage
         write_cross: cross (write_en, write_id);
-
     endgroup 
 
 
@@ -146,14 +150,20 @@ class id_scoreboard extends uvm_component;
     function new(string name = "id_scoreboard", uvm_component parent = null);
         super.new(name,parent);
         m_rstn_ap = new("m_rstn_ap", this);
-        my_exp_id_ap = new("my_exp_id_ap", this);
-        my_act_id_ap = new("my_act_id_ap", this);
+        my_exp_id_out_ap = new("my_exp_id_out_ap", this);
+        my_act_id_out_ap = new("my_act_id_out_ap", this);
         my_actin_id_ap = new("my_actin_id_ap",this)
-        cg = new();
+        id_covergroup = new();
     endfunction 
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
+
+        if (!uvm_config_db#(clk_config)::get(this, "", "m_clk_config", m_clk_config))
+            `uvm_fatal("NOCONFIG", "No clk_config found for scoreboard");
+        vif = m_clk_config.m_if;
+        if (vif == null) 
+            `uvm_fatal("NOVIF", "Scoreboard: vif is NULL!");
     endfunction
 
     function void connect_phase(uvm_phase phase);
@@ -166,78 +176,76 @@ class id_scoreboard extends uvm_component;
         rstn_q.push_back(rstn_item);
     endfunction
 // monitor DUT inputs transaction
-    virtual function void write(my_actin_id_ap, id_seq_item, act_in_item) 
+    virtual function void write_scoreboard_id(id_seq_item t); 
         `uvm_info(get_name(), $sformat("Received DUT inputs transanction :\n%s", act_in_item.sprint()), UVM_HIGH);
         act_in_q.push_back(act_in_item);
     endfunction
 
 // receive expected transaction from reference model
-
-    virtual function void write(my_exp_id_ap,id_seq_out_item exp_item);
+    virtual function void write(my_exp_id_out_ap,id_seq_out_item exp_item);
         `uvm_info(get_name(), $sformatf("Received expected transaction: \n%s", exp_item.sprint()), UVM_HIGH);
-        exp_q.push_back(exp_item);
+        exp_out_q.push_back(exp_item);
     endfunction 
 
 // receive actual transaction from  DUT monitor
-
-    virtual function void write(my_act_id_ap,id_seq_out_item act_item);
+    virtual function void write(my_act_id_out_ap,id_seq_out_item act_item);
         `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", act_item.sprint()), UVM_HIGH);
-        act_q.push_back(act_item);
+        act_out_q.push_back(act_item);
     endfunction
 
 
 
     task compare();
         forever begin
-            if(exp_q.size()>0 && act_q.size() >0) begin
+            if(exp_out_q.size()>0 && act_out_q.size() >0) begin
                 id_seq_out_item exp_item,act_item;
-                exp_item = exp_q.pop_front();
-                act_item = act_q.pop_front();
+                exp_item = exp_out_q.pop_front();
+                act_item = act_out_q.pop_front();
 
                 if(exp_item.instr == act_item.instr) begin
                     `uvm_info(get_name(), $sformatf("Instruction match: 0x%0h", exp_item.instr), UVM_HIGH);
                     id_covergroup.opcode.sample();//trigger opcode coverage sampling
                 end else
                     `uvm_error(get_name(), $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h", exp_item.instr, act_item.instr), UVM_HIGH);
-                if(exp_item.rd == act_item.rd)
-                    `uvm_info(get_name(), $sformatf("RD match: %0d", exp_item.rd), UVM_HIGH);
+                if(exp_item.reg_rd_id == act_item.reg_rd_id)
+                    `uvm_info(get_name(), $sformatf("reg_rd_id match: %0d", exp_item.reg_rd_id), UVM_HIGH);
                 else
-                    `uvm_error(get_name(), $sformatf("RD mismatch! Expected: %0d, Got: %0d", exp_item.rd, act_item.rd), UVM_HIGH);
-                if(exp_item.read1 == act_item.read1)
-                    `uvm_info(get_name(), $sformatf("Read1 match: %0d", exp_item.read1), UVM_HIGH);
+                    `uvm_error(get_name(), $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d", exp_item.reg_rd_id, act_item.reg_rd_id), UVM_HIGH);
+                if(exp_item.read_data1 == act_item.read_data1)
+                    `uvm_info(get_name(), $sformatf("read_data1 match: %0d", exp_item.read_data1), UVM_HIGH);
                 else
-                    `uvm_error(get_name(), $sformatf("Read1 mismatch! Expected: %0d, Got: %0d", exp_item.read1, act_item.read1), UVM_HIGH);
-                if(exp_item.read2 == act_item.read2)
-                    `uvm_info(get_name(), $sformatf("Read2 match: %0d", exp_item.read2), UVM_HIGH);
+                    `uvm_error(get_name(), $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d", exp_item.read_data1, act_item.read_data1), UVM_HIGH);
+                if(exp_item.read_data2 == act_item.read_data2)
+                    `uvm_info(get_name(), $sformatf("read_data2 match: %0d", exp_item.read_data2), UVM_HIGH);
                 else
-                    `uvm_error(get_name(), $sformatf("Read2 mismatch! Expected: %0d, Got: %0d", exp_item.read2, act_item.read2), UVM_HIGH);
+                    `uvm_error(get_name(), $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d", exp_item.read_data2, act_item.read_data2), UVM_HIGH);
                 if(exp_item.control_signals == act_item.control_signals)
                     `uvm_info(get_name(), $sformatf("Control signals match: %0d", exp_item.control_signals), UVM_HIGH);
                 else
                     `uvm_error(get_name(), $sformatf("Control signals mismatch! Expected: %0d, Got: %0d", exp_item.control_signals, act_item.control_signals), UVM_HIGH);
-                if(exp_item.imm == act_item.imm)
-                    `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.imm), UVM_HIGH);
+                if(exp_item.immediate_data == act_item.immediate_data)
+                    `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.immediate_data), UVM_HIGH);
                 else
-                    `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.imm, act_item.imm), UVM_HIGH);
+                    `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.immediate_data, act_item.immediate_data), UVM_HIGH);
                 // trigger coverage sampling
                 control_signals = act_item.control_signals;
-                rd = act_item.reg_rd_id;
-                imm = act_item.imm;
-                read1 = act_item.read1;
-                read2 = act_item.read2;
+                reg_rd_id = act_item.reg_rd_id;
+                immediate_data = act_item.immediate_data;
+                read_data1 = act_item.read_data1;
+                read_data2 = act_item.read_data2;
                 branch_out = act_item.branch_out;
                 pc_out = act_item.pc_out;
                 id_covergroup.sample() ;     
 
             end
             else begin
-                @(posedge m_env.vif.clk); // wait for some time before checking again
+                @(posedge vif.clk); // wait for some time before checking again
             end
         end
         forever begin
-            if(actin_q.size() > 0) begin
+            if(act_in_q.size() > 0) begin
                 id_seq_item act_in_item;
-                act_in_item = actin_q.pop_front();
+                act_in_item = act_in_q.pop_front();
                 opcode = act_in_item.instruction.opcode;
                 funct3 = act_in_item.instruction.funct3;
                 funct7 = act_in_item.instruction.funct7;
