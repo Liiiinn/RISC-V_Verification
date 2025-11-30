@@ -51,7 +51,7 @@ class id_scoreboard extends uvm_component;
 
 
     covergroup id_in_covergroup @(posedge vif.clk);
-        reset_cp: coverpoint reset_n {
+        reset_cp: coverpoint reset_n{
             bins reset = {0};
             bins run = {1};
         };
@@ -281,7 +281,7 @@ class id_scoreboard extends uvm_component;
                     `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.immediate_data), UVM_HIGH);
                 else
                     `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.immediate_data, act_item.immediate_data), UVM_HIGH);
-                // trigger coverage sampling
+                // 在这里采样输出覆盖
                 control_signals = act_item.control_signals;
                 reg_rd_id = act_item.reg_rd_id;
                 immediate_data = act_item.immediate_data;
@@ -289,7 +289,6 @@ class id_scoreboard extends uvm_component;
                 read_data2 = act_item.read_data2;
                 branch_out = act_item.branch_out;
                 pc_out = act_item.pc_out;
-                id_in_covergroup.sample() ;     
                 id_out_covergroup.sample();
                 cross_covergroup.sample();
             end
@@ -304,14 +303,16 @@ class id_scoreboard extends uvm_component;
                 opcode = act_in_item.instruction.opcode;
                 funct3 = act_in_item.instruction.funct3;
                 funct7 = act_in_item.instruction.funct7;
+                rd = act_in_item.instruction.rd;
+                rs1 = act_in_item.instruction.rs1;
+                rs2 = act_in_item.instruction.rs2;
                 write_en = act_in_item.write_en;
                 write_data = act_in_item.write_data;
                 write_id = act_in_item.write_id;
                 branch_in = act_in_item.branch_in;
                 pc = act_in_item.pc;
-                id_in_covergroup.sample();
-                id_out_covergroup.sample();
-                cross_covergroup.sample();
+                reset_n = 1'b1; // 假设非复位状态下采样
+                id_in_covergroup.sample();  // 在这里采样输入覆盖
             end
             else begin
                 @(posedge vif.clk); // wait for some time before checking again
@@ -354,7 +355,7 @@ class id_scoreboard extends uvm_component;
             $display("Coverage = %0f", cross_covergroup.get_coverage());
         end
         $display("*****************************************************");
-        if (id_in_covergroup.get_coverage() == 100.0 && id_out_covergroup.get_coverage() == 100.0 && cross_covergroup..get_coverage() == 100.0) begin
+        if (id_in_covergroup.get_coverage() == 100.0 && id_out_covergroup.get_coverage() == 100.0 && cross_covergroup.get_coverage() == 100.0) begin
             $display("FUNCTIONAL COVERAGE (100.0%%) PASSED....");
         end
         else begin
