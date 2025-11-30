@@ -9,7 +9,7 @@ To be done:
 Note:  
 1. tb_test of id is named as id_test here. 
 2. In base_test.svh, reset occurs only once. Maybe more are needed.  
-3. To be done in **reference model**: a) compelete rf part; b) check the logic; c) add a package about localparam in control_unit.
+3. To be done in **reference model**: a) merge two files; b) check the logic.  
 
 id_driver task order(wb first, then read)
 
