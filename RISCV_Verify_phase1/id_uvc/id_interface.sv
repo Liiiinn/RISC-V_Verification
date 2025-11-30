@@ -4,7 +4,7 @@
 
 import common::*;
 
-interface id_interface(input logic clk, input logic rstn);
+interface id_if(input logic clk, input logic rstn);
     
     //Input signals
     instruction_type instruction;
@@ -64,6 +64,6 @@ interface id_interface(input logic clk, input logic rstn);
         output control_signals, output debug_reg
     );
     
-endinterface : id_interface
+endinterface : id_if
 
 `endif
