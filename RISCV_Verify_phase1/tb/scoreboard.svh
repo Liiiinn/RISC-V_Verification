@@ -27,7 +27,7 @@ class id_scoreboard extends uvm_component;
 
     // input variables bound to coverage
     bit reset_n;
-    instruction_type instr;
+    // instruction_type instr;
     bit write_en;
     bit [31:0]write_data;
     bit [4:0]write_id;
@@ -254,86 +254,91 @@ class id_scoreboard extends uvm_component;
 
 
     task compare();
-        forever begin
-            if(exp_out_q.size()>0 && act_out_q.size() >0) begin
-                id_seq_out_item exp_item,act_item;
-                exp_item = exp_out_q.pop_front();
-                act_item = act_out_q.pop_front();
+        fork
+            // thread 1 : compare exp/act
+            forever begin
+                if(exp_out_q.size() > 0 && act_out_q.size() > 0) begin
+                    id_out_seq_item exp_item,act_item;
+                    exp_item = exp_out_q.pop_front();
+                    act_item = act_out_q.pop_front();
 
-                // Pass-through signals comparison
-                if (act_item.pc_out == exp_item.pc)
-                    `uvm_info(get_name(), $sformatf("PC passthrough OK: %0h", act_item.pc_out), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("PC mismatch! Expected: %0h, Got: %0h", exp_item.pc, act_item.pc_out), UVM_HIGH);
-                if (act_item.branch_out == exp_item.branch_in)
-                    `uvm_info(get_name(), $sformatf("branch_in passthrough OK: %0b", act_item.branch_out), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("branch_in mismatch! Expected: %0b, Got: %0b", exp_item.branch_in, act_item.branch_out), UVM_HIGH);
+                    // Pass-through signals comparison
+                    if (act_item.pc_out == exp_item.pc)
+                        `uvm_info(get_name(), $sformatf("PC passthrough OK: %0h", act_item.pc_out), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("PC mismatch! Expected: %0h, Got: %0h", exp_item.pc, act_item.pc_out), UVM_HIGH);
+                    if (act_item.branch_out == exp_item.branch_in)
+                        `uvm_info(get_name(), $sformatf("branch_in passthrough OK: %0b", act_item.branch_out), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("branch_in mismatch! Expected: %0b, Got: %0b", exp_item.branch_in, act_item.branch_out), UVM_HIGH);
 
-                // Input signals comparison?
-                if(exp_item.instr == act_item.instr) begin
-                    `uvm_info(get_name(), $sformatf("Instruction match: 0x%0h", exp_item.instr), UVM_HIGH);
-                    id_in_covergroup.opcode.sample();//trigger opcode coverage sampling
+                    // Input signals comparison?
+                    if(exp_item.instr == act_item.instr) begin
+                        `uvm_info(get_name(), $sformatf("Instruction match: 0x%0h", exp_item.instr), UVM_HIGH);
+                        id_in_covergroup.opcode.sample();//trigger opcode coverage sampling
+                    end
+                    else
+                        `uvm_error(get_name(), $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h", exp_item.instr, act_item.instr), UVM_HIGH);
+                    if(exp_item.reg_rd_id == act_item.reg_rd_id)
+                        `uvm_info(get_name(), $sformatf("reg_rd_id match: %0d", exp_item.reg_rd_id), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d", exp_item.reg_rd_id, act_item.reg_rd_id), UVM_HIGH);
+                    if(exp_item.read_data1 == act_item.read_data1)
+                        `uvm_info(get_name(), $sformatf("read_data1 match: %0d", exp_item.read_data1), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d", exp_item.read_data1, act_item.read_data1), UVM_HIGH);
+                    if(exp_item.read_data2 == act_item.read_data2)
+                        `uvm_info(get_name(), $sformatf("read_data2 match: %0d", exp_item.read_data2), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d", exp_item.read_data2, act_item.read_data2), UVM_HIGH);
+                    if(exp_item.control_signals == act_item.control_signals)
+                        `uvm_info(get_name(), $sformatf("Control signals match: %0d", exp_item.control_signals), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("Control signals mismatch! Expected: %0d, Got: %0d", exp_item.control_signals, act_item.control_signals), UVM_HIGH);
+                    if(exp_item.immediate_data == act_item.immediate_data)
+                        `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.immediate_data), UVM_HIGH);
+                    else
+                        `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.immediate_data, act_item.immediate_data), UVM_HIGH);
+                    
+                    // 采样输出覆盖
+                    control_signals = act_item.control_signals;
+                    reg_rd_id = act_item.reg_rd_id;
+                    immediate_data = act_item.immediate_data;
+                    read_data1 = act_item.read_data1;
+                    read_data2 = act_item.read_data2;
+                    branch_out = act_item.branch_out;
+                    pc_out = act_item.pc_out;
+                    id_out_covergroup.sample();
+                    cross_covergroup.sample();
                 end
-                else
-                    `uvm_error(get_name(), $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h", exp_item.instr, act_item.instr), UVM_HIGH);
-                if(exp_item.reg_rd_id == act_item.reg_rd_id)
-                    `uvm_info(get_name(), $sformatf("reg_rd_id match: %0d", exp_item.reg_rd_id), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d", exp_item.reg_rd_id, act_item.reg_rd_id), UVM_HIGH);
-                if(exp_item.read_data1 == act_item.read_data1)
-                    `uvm_info(get_name(), $sformatf("read_data1 match: %0d", exp_item.read_data1), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d", exp_item.read_data1, act_item.read_data1), UVM_HIGH);
-                if(exp_item.read_data2 == act_item.read_data2)
-                    `uvm_info(get_name(), $sformatf("read_data2 match: %0d", exp_item.read_data2), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d", exp_item.read_data2, act_item.read_data2), UVM_HIGH);
-                if(exp_item.control_signals == act_item.control_signals)
-                    `uvm_info(get_name(), $sformatf("Control signals match: %0d", exp_item.control_signals), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("Control signals mismatch! Expected: %0d, Got: %0d", exp_item.control_signals, act_item.control_signals), UVM_HIGH);
-                if(exp_item.immediate_data == act_item.immediate_data)
-                    `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.immediate_data), UVM_HIGH);
-                else
-                    `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.immediate_data, act_item.immediate_data), UVM_HIGH);
-                // 在这里采样输出覆盖
-                control_signals = act_item.control_signals;
-                reg_rd_id = act_item.reg_rd_id;
-                immediate_data = act_item.immediate_data;
-                read_data1 = act_item.read_data1;
-                read_data2 = act_item.read_data2;
-                branch_out = act_item.branch_out;
-                pc_out = act_item.pc_out;
-                id_out_covergroup.sample();
-                cross_covergroup.sample();
+                else begin
+                    @(posedge vif.clk); // wait for some time before checking again
+                end
             end
-            else begin
-                @(posedge vif.clk); // wait for some time before checking again
+            // thread 2 : sample input coverage
+            forever begin
+                if(act_in_q.size() > 0) begin
+                    id_seq_item act_in_item;
+                    act_in_item = act_in_q.pop_front();
+                    opcode = act_in_item.instruction.opcode;
+                    funct3 = act_in_item.instruction.funct3;
+                    funct7 = act_in_item.instruction.funct7;
+                    rd = act_in_item.instruction.rd;
+                    rs1 = act_in_item.instruction.rs1;
+                    rs2 = act_in_item.instruction.rs2;
+                    write_en = act_in_item.write_en;
+                    write_data = act_in_item.write_data;
+                    write_id = act_in_item.write_id;
+                    branch_in = act_in_item.branch_in;
+                    pc = act_in_item.pc;
+                    reset_n = 1'b1; // 假设非复位状态下采样
+                    id_in_covergroup.sample();  // 在这里采样输入覆盖
+                end
+                else begin
+                    @(posedge vif.clk); // wait for some time before checking again
+                end
             end
-        end
-        forever begin
-            if(act_in_q.size() > 0) begin
-                id_seq_item act_in_item;
-                act_in_item = act_in_q.pop_front();
-                opcode = act_in_item.instruction.opcode;
-                funct3 = act_in_item.instruction.funct3;
-                funct7 = act_in_item.instruction.funct7;
-                rd = act_in_item.instruction.rd;
-                rs1 = act_in_item.instruction.rs1;
-                rs2 = act_in_item.instruction.rs2;
-                write_en = act_in_item.write_en;
-                write_data = act_in_item.write_data;
-                write_id = act_in_item.write_id;
-                branch_in = act_in_item.branch_in;
-                pc = act_in_item.pc;
-                reset_n = 1'b1; // 假设非复位状态下采样
-                id_in_covergroup.sample();  // 在这里采样输入覆盖
-            end
-            else begin
-                @(posedge vif.clk); // wait for some time before checking again
-            end
-        end
+        join
     endtask
 
 
