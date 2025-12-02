@@ -20,14 +20,15 @@ class id_scoreboard extends uvm_component;
     // Queues to store transactions
     // Write_* functions will push_back transactions into these queues
     // Compare task will pop_front transactions from these queues for comparison
+    rstn_seq_item rstn_q[$];
+    id_seq_item act_in_q[$];
     id_out_seq_item exp_out_q[$];
     id_out_seq_item act_out_q[$];
-    id_seq_item act_in_q[$];
-    rstn_seq_item rstn_q[$];
+
+    // reset variable bound to coverage
+    bit reset_n;
 
     // input variables bound to coverage
-    bit reset_n;
-    // instruction_type instr;
     bit write_en;
     bit [31:0]write_data;
     bit [4:0]write_id;
@@ -50,11 +51,14 @@ class id_scoreboard extends uvm_component;
 
 
 
-    covergroup id_in_covergroup @(posedge vif.clk);
+    covergroup id_rstn_covergroup @(posedge vif.clk);
         reset_cp: coverpoint reset_n{
             bins reset = {0};
             bins run = {1};
         };
+    endgroup: id_rstn_covergroup
+
+    covergroup id_in_covergroup @(posedge vif.clk);
         write_enable_cp: coverpoint write_en{
             bins write = {1};
             bins no_write = {0};
@@ -197,7 +201,10 @@ class id_scoreboard extends uvm_component;
 
     covergroup cross_covergroup @(posedge vif.clk);
         write_cross: cross (write_en, write_id);
-        // 待补充
+        opcode_funct3_cross : cross opcode, funct3;
+        opcode_funct7_cross : cross opcode, funct7;
+        branch_opcode_cross : cross opcode, branch_in;
+        write_reg_cross     : cross write_en, write_id;
     endgroup: cross_covergroup
 
 
@@ -208,6 +215,7 @@ class id_scoreboard extends uvm_component;
         m_exp_id_out_ap = new("m_exp_id_out_ap", this);
         m_act_id_out_ap = new("m_act_id_out_ap", this);
         m_act_id_ap = new("m_act_id_ap",this);
+        id_rstn_covergroup = new();
         id_in_covergroup = new();
         id_out_covergroup = new();
         cross_covergroup = new();
@@ -231,12 +239,31 @@ class id_scoreboard extends uvm_component;
     function void write_scoreboard_rstn(rstn_seq_item t);
         `uvm_info(get_name(), $sformatf("Received reset transaction:\n%s", t.sprint()), UVM_HIGH);
         rstn_q.push_back(t);
+
+        // ===== 采样reset覆盖 =====
+        reset_n = t.rstn_value;
+        id_rstn_covergroup.sample();
     endfunction
 
     // monitor DUT inputs transaction
     function void write_scoreboard_id(id_seq_item t); 
         `uvm_info(get_name(), $sformat("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
         act_in_q.push_back(t);
+
+        // ===== 采样输入覆盖 =====
+        opcode      = t.instruction.opcode;
+        funct3      = t.instruction.funct3;
+        funct7      = t.instruction.funct7;
+        rd          = t.instruction.rd;
+        rs1         = t.instruction.rs1;
+        rs2         = t.instruction.rs2;
+        write_en    = t.write_en;
+        write_data  = t.write_data;
+        write_id    = t.write_id;
+        branch_in   = t.branch_in;
+        pc          = t.pc;
+
+        id_in_covergroup.sample();
     endfunction
 
     // receive expected transaction from reference model
@@ -249,96 +276,125 @@ class id_scoreboard extends uvm_component;
     function void write_scoreboard_act_id_out(id_out_seq_item t);
         `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", t.sprint()), UVM_HIGH);
         act_out_q.push_back(t);
+
+        // ===== 采样输出覆盖 =====
+        reg_rd_id      = t.reg_rd_id;
+        immediate_data = t.immediate_data;
+        read_data1     = t.read_data1;
+        read_data2     = t.read_data2;
+        control_signals = t.control_signals;
+        branch_out     = t.branch_out;
+        pc_out         = t.pc_out;
+
+        id_out_covergroup.sample();
     endfunction
 
 
 
     task compare();
-        fork
-            // thread 1 : compare exp/act
-            forever begin
-                if(exp_out_q.size() > 0 && act_out_q.size() > 0) begin
-                    id_out_seq_item exp_item,act_item;
-                    exp_item = exp_out_q.pop_front();
-                    act_item = act_out_q.pop_front();
+    // 运行时常量（可调整）
+    local int QUEUE_WARN_DEPTH = 256; // 若队列过长，打印警告（方便定位丢包或不同步）
+        forever begin
+            // 1) 先处理 reset 事件（如果 reset 事件进队列，则优先处理）
+            if (rstn_q.size() > 0) begin
+                rstn_seq_item r_item = rstn_q.pop_front();
+                if (r_item.rstn_value == 1'b0) begin
+                    // 在 reset 期间清空所有队列，避免过时事务导致误报
+                    exp_out_q.delete();
+                    act_out_q.delete();
+                    act_in_q.delete();
+                    `uvm_info(get_name(), $sformatf("Reset asserted: queues flushed"), UVM_LOW);
+                    // 等待一个时钟周期让系统稳定（可选）
+                    @(posedge vif.clk);
+                    continue;
+                end
+                // 如果是 deassertion，也可以记录信息（按需）
+                `uvm_info(get_name(), $sformatf("Reset deasserted (value=%0b)", r_item.rstn_value), UVM_LOW);
+            end
 
-                    // Pass-through signals comparison
-                    if (act_item.pc_out == exp_item.pc)
-                        `uvm_info(get_name(), $sformatf("PC passthrough OK: %0h", act_item.pc_out), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("PC mismatch! Expected: %0h, Got: %0h", exp_item.pc, act_item.pc_out), UVM_HIGH);
-                    if (act_item.branch_out == exp_item.branch_in)
-                        `uvm_info(get_name(), $sformatf("branch_in passthrough OK: %0b", act_item.branch_out), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("branch_in mismatch! Expected: %0b, Got: %0b", exp_item.branch_in, act_item.branch_out), UVM_HIGH);
+            // 2) 队列长度异常报警（帮助 debug 不匹配）
+            if (exp_out_q.size() > QUEUE_WARN_DEPTH) begin
+                `uvm_warning(get_name(), $sformatf("exp_out_q very deep: %0d", exp_out_q.size()));
+            end
+            if (act_out_q.size() > QUEUE_WARN_DEPTH) begin
+                `uvm_warning(get_name(), $sformatf("act_out_q very deep: %0d", act_out_q.size()));
+            end
 
-                    // Input signals comparison?
-                    if(exp_item.instr == act_item.instr) begin
-                        `uvm_info(get_name(), $sformatf("Instruction match: 0x%0h", exp_item.instr), UVM_HIGH);
-                        id_in_covergroup.opcode.sample();//trigger opcode coverage sampling
-                    end
-                    else
-                        `uvm_error(get_name(), $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h", exp_item.instr, act_item.instr), UVM_HIGH);
-                    if(exp_item.reg_rd_id == act_item.reg_rd_id)
-                        `uvm_info(get_name(), $sformatf("reg_rd_id match: %0d", exp_item.reg_rd_id), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d", exp_item.reg_rd_id, act_item.reg_rd_id), UVM_HIGH);
-                    if(exp_item.read_data1 == act_item.read_data1)
-                        `uvm_info(get_name(), $sformatf("read_data1 match: %0d", exp_item.read_data1), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d", exp_item.read_data1, act_item.read_data1), UVM_HIGH);
-                    if(exp_item.read_data2 == act_item.read_data2)
-                        `uvm_info(get_name(), $sformatf("read_data2 match: %0d", exp_item.read_data2), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d", exp_item.read_data2, act_item.read_data2), UVM_HIGH);
-                    if(exp_item.control_signals == act_item.control_signals)
-                        `uvm_info(get_name(), $sformatf("Control signals match: %0d", exp_item.control_signals), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("Control signals mismatch! Expected: %0d, Got: %0d", exp_item.control_signals, act_item.control_signals), UVM_HIGH);
-                    if(exp_item.immediate_data == act_item.immediate_data)
-                        `uvm_info(get_name(), $sformatf("Immediate match: %0d", exp_item.immediate_data), UVM_HIGH);
-                    else
-                        `uvm_error(get_name(), $sformatf("Immediate mismatch! Expected: %0d, Got: %0d", exp_item.immediate_data, act_item.immediate_data), UVM_HIGH);
-                    
-                    // 采样输出覆盖
-                    control_signals = act_item.control_signals;
-                    reg_rd_id = act_item.reg_rd_id;
-                    immediate_data = act_item.immediate_data;
-                    read_data1 = act_item.read_data1;
-                    read_data2 = act_item.read_data2;
-                    branch_out = act_item.branch_out;
-                    pc_out = act_item.pc_out;
-                    id_out_covergroup.sample();
-                    cross_covergroup.sample();
+            // 3) 当两侧都有输出可比时，逐对比 FIFO（基本假设：ref 与 DUT 输出顺序一致）
+            if (exp_out_q.size() > 0 && act_out_q.size() > 0) begin
+                id_out_seq_item exp_item = exp_out_q.pop_front();
+                id_out_seq_item act_item = act_out_q.pop_front();
+
+                // ---- pass-through signals ----
+                if (act_item.pc_out !== exp_item.pc) begin
+                    `uvm_error(get_name(),
+                        $sformatf("PC mismatch! Expected: 0x%0h, Got: 0x%0h (exp.pc, act.pc_out)",
+                                exp_item.pc, act_item.pc_out));
                 end
                 else begin
-                    @(posedge vif.clk); // wait for some time before checking again
+                    `uvm_info(get_name(), $sformatf("PC passthrough OK: 0x%0h", act_item.pc_out), UVM_LOW);
                 end
-            end
-            // thread 2 : sample input coverage
-            forever begin
-                if(act_in_q.size() > 0) begin
-                    id_seq_item act_in_item;
-                    act_in_item = act_in_q.pop_front();
-                    opcode = act_in_item.instruction.opcode;
-                    funct3 = act_in_item.instruction.funct3;
-                    funct7 = act_in_item.instruction.funct7;
-                    rd = act_in_item.instruction.rd;
-                    rs1 = act_in_item.instruction.rs1;
-                    rs2 = act_in_item.instruction.rs2;
-                    write_en = act_in_item.write_en;
-                    write_data = act_in_item.write_data;
-                    write_id = act_in_item.write_id;
-                    branch_in = act_in_item.branch_in;
-                    pc = act_in_item.pc;
-                    reset_n = 1'b1; // 假设非复位状态下采样
-                    id_in_covergroup.sample();  // 在这里采样输入覆盖
+
+                if (act_item.branch_out !== exp_item.branch_in) begin
+                    `uvm_error(get_name(),
+                        $sformatf("branch_in mismatch! Expected: %0b, Got: %0b (exp.branch_in, act.branch_out)",
+                                exp_item.branch_in, act_item.branch_out));
                 end
                 else begin
-                    @(posedge vif.clk); // wait for some time before checking again
+                    `uvm_info(get_name(), $sformatf("branch passthrough OK: %0b", act_item.branch_out), UVM_LOW);
                 end
+
+                // ---- main decode outputs comparison ----
+                // instruction (如果 id_out 包含 instr 字段)
+                if ($isunknown(exp_item.instr) || $isunknown(act_item.instr)) begin
+                    `uvm_warning(get_name(), $sformatf("instr contains X/Z: exp=0x%0h act=0x%0h", exp_item.instr, act_item.instr));
+                end
+                if (exp_item.instr !== act_item.instr) begin
+                    `uvm_error(get_name(),
+                        $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h",
+                                exp_item.instr, act_item.instr));
+                end
+
+                // reg rd id
+                if (exp_item.reg_rd_id !== act_item.reg_rd_id) begin
+                    `uvm_error(get_name(),
+                        $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d",
+                                exp_item.reg_rd_id, act_item.reg_rd_id));
+                end
+
+                // read data 1/2
+                if (exp_item.read_data1 !== act_item.read_data1) begin
+                    `uvm_error(get_name(),
+                        $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d",
+                                exp_item.read_data1, act_item.read_data1));
+                end
+                if (exp_item.read_data2 !== act_item.read_data2) begin
+                    `uvm_error(get_name(),
+                        $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d",
+                                exp_item.read_data2, act_item.read_data2));
+                end
+
+                // control signals: 如果 control_type 支持直接比较（结构体/enum），使用 ==
+                if (exp_item.control_signals !== act_item.control_signals) begin
+                    `uvm_error(get_name(),
+                        $sformatf("Control signals mismatch! Expected: %p, Got: %p",
+                                exp_item.control_signals, act_item.control_signals));
+                end
+
+                // immediate
+                if (exp_item.immediate_data !== act_item.immediate_data) begin
+                    `uvm_error(get_name(),
+                        $sformatf("Immediate mismatch! Expected: %0d, Got: %0d",
+                                exp_item.immediate_data, act_item.immediate_data));
+                end
+
+                // （注意：输出覆盖已在 write_scoreboard_act_id_out 中采样，compare 不再采样）
             end
-        join
+            else begin
+                // 如果任一队列为空，等一个时钟再继续检查
+                @(posedge vif.clk);
+            end
+        end
     endtask
 
 
@@ -349,11 +405,18 @@ class id_scoreboard extends uvm_component;
         join_none
         phase.drop_objection(this);
     endtask
-    //outputs 
+    
     virtual function void check_phase(uvm_phase phase);
         super.check_phase(phase);
     
         $display("*****************************************************");
+        if (id_rstn_covergroup.get_coverage() == 100.0) begin
+            $display("RESET COVERAGE (100.0%%) PASSED....");
+        end
+        else begin
+            $display("RESET COVERAGE FAILED!!!!!!!!!!!!!!!!!");
+            $display("Coverage = %0f", id_rstn_covergroup.get_coverage());
+        end
         if (id_in_covergroup.get_coverage() == 100.0) begin
             $display("INPUT COVERAGE (100.0%%) PASSED....");
         end
@@ -376,7 +439,8 @@ class id_scoreboard extends uvm_component;
             $display("Coverage = %0f", cross_covergroup.get_coverage());
         end
         $display("*****************************************************");
-        if (id_in_covergroup.get_coverage() == 100.0 && id_out_covergroup.get_coverage() == 100.0 && cross_covergroup.get_coverage() == 100.0) begin
+        if (id_in_covergroup.get_coverage() == 100.0 && id_out_covergroup.get_coverage() == 100.0 
+                && cross_covergroup.get_coverage() == 100.0 && id_rstn_covergroup.get_coverage() == 100.0) begin
             $display("FUNCTIONAL COVERAGE (100.0%%) PASSED....");
         end
         else begin
@@ -387,5 +451,3 @@ class id_scoreboard extends uvm_component;
 
     endfunction
 endclass : id_scoreboard
-
-
