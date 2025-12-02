@@ -55,24 +55,24 @@ class id_scoreboard extends uvm_component;
         reset_cp: coverpoint reset_n{
             bins reset = {0};
             bins run = {1};
-        };
-    endgroup: id_rstn_covergroup
+        }
+    endgroup
 
     covergroup id_in_covergroup @(posedge vif.clk);
         write_enable_cp: coverpoint write_en{
             bins write = {1};
             bins no_write = {0};
-        };
+        }
         write_data_cp: coverpoint write_data{
             // Idea: 可能还需要考虑特殊数据
             bins data_0 = {0};
             bins data_pos = {[1:$]};
-            bins data_neg = {[-1:-2147483648]};
-        };
+            bins data_neg = {[-2147483648:-1]};
+        }
         write_id_cp : coverpoint write_id{
             bins id_0 = {0};
             bins id_legal[] = {[1:31]};
-        };
+        }
         // instruction fields coverage
         opcode_cp: coverpoint opcode {
             bins R_type = {7'b0110011};
@@ -81,7 +81,7 @@ class id_scoreboard extends uvm_component;
             bins B_type = {7'b1100011};
             bins U_type = {7'b0110111, 7'b0010111};
             bins J_type = {7'b1101111};
-        };
+        }
         funct3_cp : coverpoint funct3{
             bins funct3_000 = {3'b000};
             bins funct3_001 = {3'b001};
@@ -91,24 +91,24 @@ class id_scoreboard extends uvm_component;
             bins funct3_101 = {3'b101};
             bins funct3_110 = {3'b110};
             bins funct3_111 = {3'b111};
-        };
+        }
         funct7_cp : coverpoint funct7{
             bins funct7_0000000 = {7'b0000000};
             bins funct7_0100000 = {7'b0100000};
             bins funct7_0000001 = {7'b0000001};
-        };
+        }
         rd_cp : coverpoint rd{
             bins rd_0 = {0};
             bins rd_id[] = {[1:31]};
-        };
+        }
         rs1_cp : coverpoint rs1{
             bins rs1_0 = {0};
             bins rs1_id[] = {[1:31]};
-        };
+        }
         rs2_cp : coverpoint rs2{
             bins rs2_0 = {0};
             bins rs2_id[] = {[1:31]};
-        };
+        }
     endgroup: id_in_covergroup
 
     covergroup id_out_covergroup @(posedge vif.clk);
@@ -117,22 +117,22 @@ class id_scoreboard extends uvm_component;
             // Idea: 可能还需要考虑mul和div的溢出
             bins imm_0 = {0};
             bins imm_pos = {[1:$]};
-            bins imm_neg = {[-1:-2147483648]};
-        };
+            bins imm_neg = {[-2147483648:-1]};
+        }
         reg_rd_id_cp : coverpoint reg_rd_id{
             bins rd_0 = {0};
             bins rd_id[] = {[1:31]};
-        };
+        }
         read_data1_cp : coverpoint read_data1{
             bins data1_0 = {0};
             bins data1_pos = {[1:$]};
-            bins data1_neg = {[-1:-2147483648]};
-        };
+            bins data1_neg = {[-2147483648:-1]};
+        }
         read_data2_cp : coverpoint read_data2{
             bins data2_0 = {0};
             bins data2_pos = {[1:$]};
-            bins data2_neg = {[-1:-2147483648]};
-        };
+            bins data2_neg = {[-2147483648:-1]};
+        }
         // control signals covergroup
         alu_cp : coverpoint control_signals.alu_op{
             bins alu_op_ADD = {ALU_ADD};
@@ -152,55 +152,55 @@ class id_scoreboard extends uvm_component;
             bins alu_op_REMU = {ALU_REMU};
             bins alu_op_PASS = {ALU_PASS};
             bins alu_op_MULH = {ALU_MULH};
-        };
+        }
         alu_src_cp : coverpoint control_signals.alu_src{
             bins alu_src_0 = {0};
             bins alu_src_1 = {1};
-        };
+        }
         mem_read_cp : coverpoint control_signals.mem_read{
             bins mem_read_0 = {0};
             bins mem_read_1 = {1};
-        };
+        }
         mem_write_cp : coverpoint control_signals.mem_write{
             bins mem_write_0 = {0};
             bins mem_write_1 = {1};
-        };
+        }
         reg_write_cp : coverpoint control_signals.reg_write{
             bins reg_write_0 = {0};
             bins reg_write_1 = {1};
-        };
+        }
         mem_to_reg_cp : coverpoint control_signals.mem_to_reg{
             bins mem_to_reg_0 = {0};
             bins mem_to_reg_1 = {1};
-        };
+        }
         branch_cp : coverpoint control_signals.is_branch{
             bins is_branch_0 = {0};
             bins is_branch_1 = {1};
-        };
+        }
         jump_cp : coverpoint control_signals.is_jump{
             bins is_jump_0 = {0};
             bins is_jump_1 = {1};
-        };
+        }
         jumpr_cp : coverpoint control_signals.is_jumpr{
             bins is_jumpr_0 = {0};
             bins is_jumpr_1 = {1};
-        };
+        }
         lui_cp : coverpoint control_signals.is_lui{
             bins is_lui_0 = {0};
             bins is_lui_1 = {1};
-        };
+        }
         auipc_cp : coverpoint control_signals.is_auipc{
             bins is_auipc_0 = {0};
             bins is_auipc_1 = {1};
-        };
+        }
         mul_cp: coverpoint control_signals.is_mul{
             bins is_mul_0 = {0};
             bins is_mul_1 = {1};
-        };
+        }
     endgroup: id_out_covergroup
 
     covergroup cross_covergroup @(posedge vif.clk);
-        write_cross: cross (write_en, write_id);
+        write_cross         : cross write_en, write_id;
         opcode_funct3_cross : cross opcode, funct3;
         opcode_funct7_cross : cross opcode, funct7;
         branch_opcode_cross : cross opcode, branch_in;
@@ -292,8 +292,8 @@ class id_scoreboard extends uvm_component;
 
 
     task compare();
-    // 运行时常量（可调整）
-    local int QUEUE_WARN_DEPTH = 256; // 若队列过长，打印警告（方便定位丢包或不同步）
+        // 运行时常量（可调整）
+        localparam int QUEUE_WARN_DEPTH = 256; // 若队列过长，打印警告（方便定位丢包或不同步）
         forever begin
             // 1) 先处理 reset 事件（如果 reset 事件进队列，则优先处理）
             if (rstn_q.size() > 0) begin
@@ -387,8 +387,6 @@ class id_scoreboard extends uvm_component;
                         $sformatf("Immediate mismatch! Expected: %0d, Got: %0d",
                                 exp_item.immediate_data, act_item.immediate_data));
                 end
-
-                // （注意：输出覆盖已在 write_scoreboard_act_id_out 中采样，compare 不再采样）
             end
             else begin
                 // 如果任一队列为空，等一个时钟再继续检查
