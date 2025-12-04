@@ -18,12 +18,12 @@ COVERAGE=${3:-1}  # Enable coverage by default
 
 # Directory structure
 PROJECT_ROOT="."
-DUT_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/dut"
-TB_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/tb"
-CLK_UVC_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/clk_uvc"
-RSTN_UVC_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/rstn_uvc"
-ID_UVC_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/id_uvc"
-ID_OUT_UVC_DIR="${PROJECT_ROOT}/RISCV_Verify_phase1/id_out_uvc"
+DUT_DIR="${PROJECT_ROOT}/dut"
+TB_DIR="${PROJECT_ROOT}/tb"
+CLK_UVC_DIR="${PROJECT_ROOT}/clk_uvc"
+RSTN_UVC_DIR="${PROJECT_ROOT}/rstn_uvc"
+ID_UVC_DIR="${PROJECT_ROOT}/id_uvc"
+ID_OUT_UVC_DIR="${PROJECT_ROOT}/id_out_uvc"
 
 OUTPUT_ROOT="${PROJECT_ROOT}/sim_output"
 WORK_DIR="${OUTPUT_ROOT}/work"
