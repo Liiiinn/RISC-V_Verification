@@ -25,7 +25,10 @@ RSTN_UVC_DIR="${PROJECT_ROOT}/rstn_uvc"
 ID_UVC_DIR="${PROJECT_ROOT}/id_uvc"
 ID_OUT_UVC_DIR="${PROJECT_ROOT}/id_out_uvc"
 
-OUTPUT_ROOT="${PROJECT_ROOT}/sim_output"
+GIT_ROOT="$(cd "${PROJECT_ROOT}/.." && pwd)"  # RISC-V_Verification
+PARENT_DIR="$(cd "${GIT_ROOT}/.." && pwd)"     # ICP2
+OUTPUT_ROOT="${PARENT_DIR}/sim_output/RISCV_Verify_phase1"
+
 WORK_DIR="${OUTPUT_ROOT}/work"
 LOG_DIR="${OUTPUT_ROOT}/logs"
 COV_DIR="${OUTPUT_ROOT}/coverage"
