@@ -15,6 +15,11 @@
 // This class is a part of the test library.
 // 
 //------------------------------------------------------------------------------
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import tb_pkg::*; // Import the testbench package
+import common::*; // Import common definitions
+
 class base_test extends uvm_test;
     `uvm_component_utils(base_test)
 

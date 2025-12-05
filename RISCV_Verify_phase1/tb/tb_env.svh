@@ -10,6 +10,11 @@
 // scoreboard
 //
 //------------------------------------------------------------------------------
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import tb_pkg::*; // Import the testbench package
+import common::*; // Import common definitions
+
 class tb_env extends uvm_env;
     `uvm_component_utils(tb_env)
 

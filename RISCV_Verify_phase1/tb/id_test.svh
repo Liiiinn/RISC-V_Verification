@@ -3,6 +3,11 @@
 //
 // See more detailed information in base_test
 //------------------------------------------------------------------------------
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import tb_pkg::*; // Import the testbench package
+import common::*; // Import common definitions
+
 class id_test extends base_test;
     `uvm_component_utils(id_test)
 
