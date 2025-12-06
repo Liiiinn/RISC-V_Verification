@@ -81,8 +81,9 @@ vmap work ${WORK_DIR}
 # Build vlog command with all necessary options
 VLOG_CMD="vlog -sv -timescale 1ns/1ns +acc=pr"
 
-VLOG_CMD="$VLOG_CMD -work ${WORK_DIR}"
+VLOG_CMD="$VLOG_CMD -L mtiUvm"
 
+VLOG_CMD="$VLOG_CMD -work ${WORK_DIR}"
 VLOG_CMD="$VLOG_CMD -l ${COMPILE_LOG}"
 
 # Add include directories
@@ -104,39 +105,16 @@ VLOG_CMD="$VLOG_CMD ${DUT_DIR}/register_file.sv"
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/control_unit.sv"
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/decode_stage.sv"
 
-# Add Clock UVC files
+# Compile interface files
 VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_if.sv"
-VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_config.svh"
-VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_driver.svh"
-VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_agent.svh"
-
-# Add Reset UVC files
 VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_if.sv"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_config.svh"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_seq_item.svh"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_seq.svh"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_driver.svh"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_monitor.svh"
-VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_agent.svh"
-
-# Add ID Input UVC files
 VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_interface.sv"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_config.svh"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_seq_item.svh"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_seq.svh"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_driver.svh"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_monitor.svh"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_agent.svh"
-
-# Add ID Output UVC files
 VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_vif.sv"
-VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_config.svh"
-VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_seq_item.svh"
-VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_monitor.svh"
-VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_agent.svh"
+
+# Compile tb_pkg.sv
+VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_pkg.sv"
 
 # Add Testbench files
-VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_pkg.sv"
 VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_top.sv"
 
 # Execute compilation
@@ -165,6 +143,8 @@ VSIM_CMD="vsim -c"
 
 # Specify work library
 VSIM_CMD="$VSIM_CMD -work ${WORK_DIR}"
+
+VSIM_CMD="$VSIM_CMD -L mtiUvm"
 
 # Specify log and waveform file locations
 VSIM_CMD="$VSIM_CMD -l ${SIM_LOG}"
