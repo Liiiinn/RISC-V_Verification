@@ -79,7 +79,7 @@ vlib ${WORK_DIR}
 vmap work ${WORK_DIR}
 
 # Build vlog command with all necessary options
-VLOG_CMD="vlog -sv -timescale 1ns/1ns +acc=pr"
+VLOG_CMD="vlog -sv -timescale 1ns/1ps +acc=pr"
 
 VLOG_CMD="$VLOG_CMD -L mtiUvm"
 
