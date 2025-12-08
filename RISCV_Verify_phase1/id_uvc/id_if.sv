@@ -22,12 +22,12 @@ interface id_if(input logic clk, input logic rstn);
     logic [31:0] read_data2;
     logic [31:0] immediate_data;
     control_type control_signals;
-    logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];
+    // logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];
     
     // Driver clocking block
     clocking driver_cb @(posedge clk);
-        default input #1 output #1;
-        output instruction;
+        // default input #1 output #1;
+        // output instruction;
         output pc;
         output write_en;
         output write_id;
@@ -37,7 +37,7 @@ interface id_if(input logic clk, input logic rstn);
     
     // Monitor clocking block
     clocking monitor_cb @(posedge clk);
-        default input #1 output #1;
+        // default input #1 output #1;
         input instruction;
         input pc;
         input write_en;
@@ -51,12 +51,13 @@ interface id_if(input logic clk, input logic rstn);
         input read_data2;
         input immediate_data;
         input control_signals;
-        input debug_reg;
-    endclocking    //task 19: Complete Modports 
-    modport driver_mp(clocking driver_cb, input clk, input reset_n);
-    modport monitor_mp(clocking monitor_cb, input clk, input reset_n);
+        // input debug_reg; // Not needed
+    endclocking
+    
+    modport driver_mp(clocking driver_cb, input clk, input rstn);
+    modport monitor_mp(clocking monitor_cb, input clk, input rstn);
     modport dut_mp(
-        input clk, input reset_n,
+        input clk, input rstn,
         input instruction, input pc, input write_en, 
         input write_id, input write_data, input branch_in,
         output branch_out, output reg_rd_id, output pc_out,

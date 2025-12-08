@@ -108,8 +108,8 @@ VLOG_CMD="$VLOG_CMD ${DUT_DIR}/decode_stage.sv"
 # Compile interface files
 VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_if.sv"
 VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_if.sv"
-VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_interface.sv"
-VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_vif.sv"
+VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_if.sv"
+VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_if.sv"
 
 # Compile tb_pkg.sv
 VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_pkg.sv"
