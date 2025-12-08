@@ -1,3 +1,6 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+
 class clk_agent extends uvm_agent;
   	`uvm_component_utils(clk_agent)
 	clk_driver m_driver;
@@ -15,9 +18,9 @@ class clk_agent extends uvm_agent;
 			`uvm_fatal(get_name(), "Cannot find the clock configuration!")
 		end
 
-		uvm_config_db #(clk_config)::set(this, "*","clk_config", m_config);
+		uvm_config_db #(clk_config)::set(this, "m_driver","clk_config", m_config);
 		if(m_config.is_active) begin
-			m_driver = clk_driver::type_id::create("clk_driver", this);
+			m_driver = clk_driver::type_id::create("m_driver", this);
 		end
 	endfunction : build_phase
  
