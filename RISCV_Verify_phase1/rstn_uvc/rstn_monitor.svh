@@ -1,12 +1,12 @@
-class rst_monitor extends uvm_monitor;
-	`uvm_component_utils(rst_monitor)
-	resetn_config m_config;
+class rstn_monitor extends uvm_monitor;
+	`uvm_component_utils(rstn_monitor)
+	rstn_config m_config;
 	uvm_analysis_port #(rstn_seq_item) m_analysis_port;
 
 	function new(string name , uvm_component parent = null);
 		super.new(name, parent);
 		m_analysis_port = new("m_analysis_port", this);
-		if(!uvm_config_db #(rstn_config)::get(this,"","rst_config", m_config)) begin
+		if(!uvm_config_db #(rstn_config)::get(this,"","rstn_config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the rstn configuration!")
 		end
 		m_analysis_port = new("m_analysis_port", this);
@@ -16,7 +16,7 @@ class rst_monitor extends uvm_monitor;
 		super.build_phase(phase);
 	endfunction : build_phase
 
-	task run_pahse(uvm_phase phase);
+	task run_phase(uvm_phase phase);
 		rstn_seq_item seq_item;
 		int unsigned clocks;
 		logic rstn;
@@ -35,4 +35,4 @@ class rst_monitor extends uvm_monitor;
 			clocks = 1;
 		end
 		endtask : run_phase
-endclass : rst_monitor
+endclass : rstn_monitor

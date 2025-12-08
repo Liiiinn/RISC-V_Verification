@@ -23,7 +23,7 @@ class rstn_agent extends uvm_agent;
 			m_driver = rst_driver::type_id::create("rstn_driver", this);
 		end
 		if(m_config.has_monitor == UVM_ACTIVE) begin
-			m_monitor = rst_monitor::type_id::create("rstn_monitor", this);
+			m_monitor = rstn_monitor::type_id::create("rstn_monitor", this);
 		end
 	endfunction : build_phase
 

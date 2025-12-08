@@ -32,14 +32,14 @@ class id_seq_item extends uvm_sequence_item;
     randc logic [31:0] write_data;
     rand logic branch_in;
     rand logic [31:0] pc;
-    randc logic [4:0] reg_id with { reg_id inside {[1:31]}; }
+    randc logic [4:0] reg_id;
     randc logic [2:0] funct3;
     randc logic [6:0] funct7;
     randc logic [19:0] imm_20bit;
     
 
    constraint instr_type_distribution {
-        instr_type dist {
+        instruction dist {
             Instr_B_type   := 25,
             Instr_I_type   := 25,
             Instr_S_type   := 15,
@@ -48,78 +48,82 @@ class id_seq_item extends uvm_sequence_item;
             Instr_J_type   := 10
         };
     }
-
+   constraint reg_id_constraint {
+    reg_id inside {[1:31]};
+  }
    constraint instruction_constraints{
         //Instr_R_type instruction constraints
-        if (instr_type == Instr_R_type) {
+        (instr_type == Instr_R_type)-> {
             instruction.opcode == 7'b0110011;
             instruction.funct3 == funct3;
             instruction.funct7 inside {7'b0000000, 7'b0100000};
             instruction.rd == reg_id;
             instruction.rs1 == reg_id;
             instruction.rs2 == reg_id;
-            if(instruction.funct3 == 3'b001 || instruction.funct3 == 3'b101) begin
+            (instruction.funct3 == 3'b001 || instruction.funct3 == 3'b101)-> {
                 instruction.funct7 inside {7'b0000000, 7'b0100000};  
-            end
-            else instruction.funct7 == 7'b0000000;
+            }
+            (!(instruction.funct3 == 3'b001 || instruction.funct3 == 3'b101))->{
+                instruction.funct7 == 7'b0000000;
+            }
         }
         //Instr_I_type instruction constraints
-        if(instr_type == Instr_I_type){
-            instruction.opcode = 7'b0010011;
-            instruction.funct3 = funct3;
-            instruction.rd = reg_id;
-            instruction.rs1 = reg_id;
-            if(instruction.funct3 == 3'b101) begin
-                instruction.funct7 inside {7'b0000000, 7'b0100000};  
-            end
+        (instr_type == Instr_I_type)-> {
+            instruction.opcode == 7'b0010011;
+            instruction.funct3 == funct3;
+            instruction.rd == reg_id;
+            instruction.rs1 == reg_id;
+            if(instruction.funct3 == 3'b101) {
+                instruction.funct7 inside {7'b0000000, 7'b0100000};
+            }
             else if(instruction.funct3 == 3'b001) instruction.funct7 == 7'b0000000;
             else instruction.funct7 == funct7;
         }
         //L type (I_type instr but with different opcode)
-        if(instr_type == Instr_I_L_type){
-            instruction.opcode = 7'b0000011;
+        (instr_type == Instr_I_L_type)-> {
+            instruction.opcode == 7'b0000011;
             instruction.funct3 inside {3'b000,3'b001,3'b010};// LB,LH,LW
-            instruction.rd = reg_id;
-            instruction.rs1 = reg_id;
+            instruction.rd == reg_id;
+            instruction.rs1 == reg_id;
             instruction[31:20] == imm_20bit[11:0];
         }
         // Instr_I_J_type (JALR)
-        if(instr_type == Instr_I_J_type){
-            instruction.opcode = 7'b1100111;
+        (instr_type == Instr_I_J_type)-> {
+            instruction.opcode == 7'b1100111;
             instruction.funct3 == 3'b000; // JALR
-            instruction.rd = reg_id;
-            instruction.rs1 = reg_id;
+            instruction.rd == reg_id;
+            instruction.rs1 == reg_id;
             instruction[31:20] == imm_20bit[11:0];
         }
         //Instr_S_type instruction constraints
-        if(instr_type == Instr_S_type){
-            instruction.opcode = 7'b0100011;
+        (instr_type == Instr_S_type)-> {
+            instruction.opcode == 7'b0100011;
             instruction.funct3 inside {3'b000,3'b001,3'b010};// SB,SH,SW
-            instruction.rs1 = reg_id;
-            instruction.rs2 = reg_id;
+            instruction.rs1 == reg_id;
+            instruction.rs2 == reg_id;
             instruction[31:25] == imm_20bit[6:0];
             instruction[11:7] == imm_20bit[4:0];
         }
         //Instr_B_type instruction constraints
-        if(instr_type == Instr_B_type){
-            instruction.opcode = 7'b1100011;
+        (instr_type == Instr_B_type)-> {
+            instruction.opcode == 7'b1100011;
             instruction.funct3 inside {3'b000,3'b001,3'b100,3'b101,3'b110,3'b111};// BEQ,BNE,BLT,BGE,BLTU,BGEU
-            instruction.rs1 = reg_id;
-            instruction.rs2 = reg_id;
+            instruction.rs1 == reg_id;
+            instruction.rs2 == reg_id;
             instruction[31] inside {1'b0,1'b1};        // imm[12]
             instruction[30:25] == imm_20bit[5:0]; // imm[10:5]
             instruction[11:8] == imm_20bit[3:0]; // imm[4:1]
             instruction[7] == inside {1'b0,1'b1};  // imm[11]
         }
         //Instr_U_type instruction constraints
-        if(instr_type == Instr_U_type){
+        (instr_type == Instr_U_type)-> {
             instruction.opcode inside {7'b0110111,7'b0010111};// LUI,AUIPC
-            instruction.rd = reg_id;
+            instruction.rd == reg_id;
             instruction[31:12] == imm_20bit;
         }
-        if(instr_type == Instr_J_type){
-            instruction.opcode = 7'b1101111;// JAL
-            instruction.rd = reg_id;
+        (instr_type == Instr_J_type)-> {
+            instruction.opcode == 7'b1101111;// JAL
+            instruction.rd == reg_id;
             instruction[31] inside {1'b0,1'b1};        // imm[20]
             instruction[30:21] == imm_20bit[9:0]; // imm[10:1]
             instruction[20] inside {1'b0,1'b1};        // imm[11]

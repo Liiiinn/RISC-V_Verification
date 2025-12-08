@@ -1,5 +1,5 @@
 class rstn_seq extends uvm_sequence #(rstn_seq_item);
-	`uvm_object_utils_begin(rstn_seq)
+	`uvm_object_utils(rstn_seq)
 
 	rand int unsigned delay;
 	rand int unsigned length;
