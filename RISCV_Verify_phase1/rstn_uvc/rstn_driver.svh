@@ -1,3 +1,6 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+
 class rst_driver extends uvm_driver #(rstn_seq_item);
 	`uvm_component_utils_begin(rst_driver)
 
