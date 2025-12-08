@@ -13,11 +13,11 @@ interface id_out_if(input logic clk, input logic rstn);
     logic [31:0] read_data2;
     logic [31:0] immediate_data;
     control_type control_signals;
-    logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];
+    // logic [31:0] debug_reg[0:REGISTER_FILE_SIZE-1];
     
     // Monitor clocking block
     clocking monitor_cb @(posedge clk);
-        default input #1;
+        default input #0;
         input branch_out;
         input reg_rd_id;
         input pc_out;
@@ -25,7 +25,7 @@ interface id_out_if(input logic clk, input logic rstn);
         input read_data2;
         input immediate_data;
         input control_signals;
-        input debug_reg;
+        // input debug_reg;
     endclocking
     
     // Modport for monitor
@@ -33,6 +33,13 @@ interface id_out_if(input logic clk, input logic rstn);
         clocking monitor_cb, 
         input clk, 
         input rstn
+    );
+
+    modport dut_mp (
+        output branch_out, reg_rd_id, pc_out,
+        output read_data1, read_data2, immediate_data,
+        output control_signals,
+        input  clk, rstn
     );
 
 endinterface : id_out_if

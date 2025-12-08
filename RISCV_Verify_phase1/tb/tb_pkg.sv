@@ -1,4 +1,4 @@
-`timescale 1ns/1ns
+`timescale 1ns/1ps
 package tb_pkg;
     import uvm_pkg ::*;
     `include "uvm_macros.svh"
@@ -21,8 +21,11 @@ package tb_pkg;
     `include "id_seq_item.svh"
     `include "id_seq.svh"
 
-    `include "scoreboard.svh"
+    `include "id_scoreboard.svh"
+    `include "id_ref_model.svh"
     `include "top_config.svh"
     `include "tb_env.svh"
-    `include "top_test1.svh"
+    `include "base_test.svh"
+    `include "id_test.svh"
+    `include "tb_top.sv"
 endpackage : tb_pkg

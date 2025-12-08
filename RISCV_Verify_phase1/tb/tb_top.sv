@@ -1,18 +1,3 @@
-//------------------------------------------------------------------------------
-//
-// This module is a top-level module for the TB with serial data to parallel  DUT
-//
-// It instantiates all of the uVC interface instances and connects them to the RTL top.
-// It also initializes the UVM test environment and runs the test and
-// it creates the default top-level test configuration.
-//
-// The testbench uses the following uVC interfaces:
-// - CLOCK IF: Generates a system clock.
-// - RESET IF: Generates the reset signal.
-// - SERIAL_DATA IF: Generate parallel data to the DUT input interface
-// - PARALLEL_DATA IF: Passes the DUT output infterface to parallel data uVC
-//
-//------------------------------------------------------------------------------
 module tb_top;
 
     // Include basic packages
