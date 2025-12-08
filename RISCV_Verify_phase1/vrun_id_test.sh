@@ -99,17 +99,18 @@ if [ $COVERAGE -eq 1 ]; then
     VLOG_CMD="$VLOG_CMD +cover=bcesf"
 fi
 
-# Add DUT files
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/common.sv"
-VLOG_CMD="$VLOG_CMD ${DUT_DIR}/register_file.sv"
-VLOG_CMD="$VLOG_CMD ${DUT_DIR}/control_unit.sv"
-VLOG_CMD="$VLOG_CMD ${DUT_DIR}/decode_stage.sv"
 
 # Compile interface files
 VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_if.sv"
 VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_if.sv"
 VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_if.sv"
 VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_if.sv"
+
+# Add DUT files
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/register_file.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/control_unit.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/decode_stage.sv"
 
 # Compile tb_pkg.sv
 VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_pkg.sv"
