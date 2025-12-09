@@ -1,5 +1,6 @@
+
 class top_config extends uvm_object;
-	`uvm_object_params_utils(top_config)
+	`uvm_object_param_utils(top_config)
 
  	//clock_configuration instance for clock agent 
  	clk_config m_clk_config;
@@ -14,9 +15,9 @@ class top_config extends uvm_object;
  	  	m_clk_config.is_active = 1;
  	  	m_clk_config.clk_period = 10;
 
- 	  	m_reset_config = new("m_reset_config");
- 	  	m_reset_config.is_active = 1;
- 	  	m_reset_config.has_monitor = 1;
+ 	  	m_rstn_config = new("m_rstn_config");
+ 	  	m_rstn_config.is_active = 1;
+ 	  	m_rstn_config.has_monitor = 1;
 
  	  	m_id_config = new("m_id_config");
  	  	m_id_config.is_active = 1;

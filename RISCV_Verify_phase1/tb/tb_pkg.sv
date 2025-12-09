@@ -16,16 +16,23 @@ package tb_pkg;
     `include "rstn_agent.svh"
 
     `include "id_config.svh"
-    `include "id_seq_item.svh"
+    `include "id_seq_item.svh"  
     `include "id_monitor.svh"
     `include "id_driver.svh"
-    `include "id_seq.svh"
-    `include "id_agent.svh"
+    `include "id_seq.svh" 
+    `include "id_agent.svh" 
 
-    `include "id_ref_model.svh"
-    `include "id_scoreboard.svh"
+    `include "id_out_config.svh"
+    `include "id_out_seq_item.svh"
+    `include "id_out_monitor.svh"
+    `include "id_out_agent.svh"
+
+    `include "id_ref_model.svh" 
+    `include "id_scoreboard.svh"  
     `include "top_config.svh"
-    `include "tb_env.svh"
-    `include "base_test.svh"
-    `include "id_test.svh"
+    `include "tb_env.svh" 
+    `include "base_test.svh" 
+    `include "id_test.svh" 
+   
+
 endpackage : tb_pkg

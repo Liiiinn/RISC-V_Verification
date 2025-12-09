@@ -54,9 +54,9 @@ class id_out_monitor extends uvm_monitor;
                 item.control_signals = m_config.m_vif.monitor_cb.control_signals;
                 
                 // Collect debug registers
-                for (int i = 0; i < REGISTER_FILE_SIZE; i++) begin
-                    item.debug_reg[i] = m_config.m_vif.monitor_cb.debug_reg[i];
-                end
+                // for (int i = 0; i < REGISTER_FILE_SIZE; i++) begin
+                //     item.debug_reg[i] = m_config.m_vif.monitor_cb.debug_reg[i];
+                // end
                 
                 `uvm_info(get_name(), 
                     $sformatf("Captured ID output: rd=%0d, read1=0x%0h, read2=0x%0h, imm=0x%0h", 

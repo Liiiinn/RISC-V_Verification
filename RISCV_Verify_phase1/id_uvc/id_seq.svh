@@ -35,13 +35,13 @@ class id_seq_random_sequence extends id_seq_base_sequence;
         write_en dist{
             0 :/ 3,
             1 :/ 1
-        }
+        };
     }
     constraint branch_in_c{
         branch_in dist{
             0 :/ 3,
             1 :/ 1
-        }
+        };
     }
 
     virtual task body();

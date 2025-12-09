@@ -1,11 +1,12 @@
-module tb_top;
 
+module tb_top;
     // Include basic packages
     import uvm_pkg::*;
+    import tb_pkg::*;
     `include "uvm_macros.svh"
 
     // Include optional packages
-    import tb_pkg::*; 
+     
     import common::*;
 
     // uVC TB signal variables
@@ -55,7 +56,7 @@ module tb_top;
     assign i_id_out_if.read_data2 = tb_read_data2;
     assign i_id_out_if.immediate_data = tb_immediate_data;
     assign i_id_out_if.control_signals = tb_control_signals;
-    assign i_id_out_if.debug_reg = tb_debug_reg;
+//    assign i_id_out_if.debug_reg = tb_debug_reg;
 
     // Instantiation of
     decode_stage inst_decode_stage(/*AUTOINST*/
@@ -66,7 +67,7 @@ module tb_top;
 		.read_data1		(tb_read_data1),	 // Templated
 		.read_data2		(tb_read_data2),	 // Templated
 		.immediate_data	(tb_immediate_data), // Templated
-		.debug_reg		(tb_debug_reg),
+//		.debug_reg		(tb_debug_reg),
 		.control_signals	(tb_control_signals), // Templated
 		
 		// Inputs
@@ -86,10 +87,10 @@ module tb_top;
         m_top_config = new("m_top_config");
         uvm_config_db #(top_config)::set(null,"tb_top","top_config", m_top_config);
         // Save all virtual interface instances into configuration
-        m_top_config.m_clk_config.m_vif = i_clk_if;
+        m_top_config.m_clk_config.m_if = i_clk_if;
         m_top_config.m_rstn_config.m_vif = i_rstn_if;
         m_top_config.m_id_config.m_vif = i_id_if;
-        m_top_config.i_id_out_config.m_vif = i_id_out_if;
+        m_top_config.m_id_out_config.m_vif = i_id_out_if;
     end
 
     // Start UVM test_base environment

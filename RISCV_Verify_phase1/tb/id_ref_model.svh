@@ -1,6 +1,6 @@
 import uvm_pkg::*;
 `include "uvm_macros.svh"
-`include "common.sv"
+import common::*;
 
 class id_ref_model extends uvm_component;
 	uvm_analysis_imp #(id_seq_item,id_ref_model) analysis_imp;
@@ -23,8 +23,12 @@ class id_ref_model extends uvm_component;
 	// 可能的bug：exp还有遗漏未赋值的字段
 	function void decode_instr(id_out_seq_item exp, id_seq_item item); // Input a handle so exp can be modified
 		instruction_type tr = item.instruction;
+		logic[6:0] opcode = tr.opcode;
+		logic[2:0] funct3 = tr.funct3;
+		logic[6:0] funct7 = tr.funct7;	
 		
-		exp = '0; // default all fields to zero
+	   // exp = 32'b0; // default all fields to zero
+		
 		// 待填写：
     	// exp.read_data1 = 
     	// exp.read_data2 = 
@@ -38,9 +42,7 @@ class id_ref_model extends uvm_component;
 		exp.control_signals.rs1_id = tr.rs1;
 		exp.control_signals.rs2_id = tr.rs2;
 
-		logic[6:0] opcode = tr.opcode;
-		logic[2:0] funct3 = tr.funct3;
-		logic[6:0] funct7 = tr.funct7;	
+
 
 		case(opcode)
 			7'b0110011: begin // R-type

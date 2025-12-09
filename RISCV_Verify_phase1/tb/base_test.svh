@@ -56,9 +56,11 @@ class base_test extends uvm_test;
     // FUNCTION: run_phase
     // Start UVM test in running phase.
     //------------------------------------------------------------------------------
+
+
     virtual task run_phase(uvm_phase phase);
         rstn_seq rstn;
-        id_seq id;
+        id_seq_random_sequence id;
         // id_out_seq?
 
         super.run_phase(phase);
@@ -77,7 +79,7 @@ class base_test extends uvm_test;
         // Randomize input data
         begin
             repeat (no_of_data) begin
-                id = id_seq::type_id::create("id");
+                id = id_seq_random_sequence::type_id::create("id");
                 if (!id.randomize()) begin
                     `uvm_fatal(get_name(), "Failed to randomize id inputs.")
                 end

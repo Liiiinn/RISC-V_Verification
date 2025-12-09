@@ -24,14 +24,14 @@ class id_monitor extends uvm_monitor;
     endfunction
       task run_phase(uvm_phase phase);
         forever begin
-            id_item item;
+            id_seq_item item;
             
             // Wait for reset deassertion
-            wait(m_config.m_vif.reset_n);
-            `uvm_info(get_name(), "Reset released, starting monitoring", UVM_HIGH);
+            // wait(m_config.m_vif.reset_n);
+            // `uvm_info(get_name(), "Reset released, starting monitoring", UVM_HIGH);
             
             // Monitor transactions while not in reset
-            while(m_config.m_vif.reset_n) begin
+            while(m_config.m_vif.rstn) begin
                 @(m_config.m_vif.monitor_cb);
                 
                 // Create new item and capture all signals
@@ -46,18 +46,18 @@ class id_monitor extends uvm_monitor;
                 item.branch_in = m_config.m_vif.monitor_cb.branch_in;
                 
                 // Capture outputs
-                item.branch_out = m_config.m_vif.monitor_cb.branch_out;
-                item.reg_rd_id  = m_config.m_vif.monitor_cb.reg_rd_id;
-                item.read_data1 = m_config.m_vif.monitor_cb.read_data1;
-                item.read_data2 = m_config.m_vif.monitor_cb.read_data2;
-                item.control_signals = m_config.m_vif.monitor_cb.control_signals;
-                item.immediate_data = m_config.m_vif.monitor_cb.immediate_data;
-                item.pc_out = m_config.m_vif.monitor_cb.pc_out;
+               // item.branch_out = m_config.m_vif.monitor_cb.branch_out;
+               // item.reg_rd_id  = m_config.m_vif.monitor_cb.reg_rd_id;
+               // item.read_data1 = m_config.m_vif.monitor_cb.read_data1;
+               // item.read_data2 = m_config.m_vif.monitor_cb.read_data2;
+               // item.control_signals = m_config.m_vif.monitor_cb.control_signals;
+               // item.immediate_data = m_config.m_vif.monitor_cb.immediate_data;
+               // item.pc_out = m_config.m_vif.monitor_cb.pc_out;
 
                 // Copy debug registers
-                for (int i = 0; i < REGISTER_FILE_SIZE; i++) begin
-                    item.debug_reg[i] = m_config.m_vif.monitor_cb.debug_reg[i];
-                end
+                // for (int i = 0; i < REGISTER_FILE_SIZE; i++) begin
+                //     item.debug_reg[i] = m_config.m_vif.monitor_cb.debug_reg[i];
+                // end
                 
                 `uvm_info("MONITOR", $sformatf("Captured transaction: %s", item.sprint()), UVM_HIGH)
                 m_analysis_port.write(item);

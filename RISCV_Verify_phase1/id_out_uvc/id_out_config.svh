@@ -10,7 +10,7 @@ class id_out_config extends uvm_object;
     bit is_active = 1;
     bit has_monitor = 1;
     
-    virtual id_out_vif m_vif;
+    virtual id_out_if m_vif;
     
     `uvm_object_utils_begin(id_out_config)
         `uvm_field_int(is_active, UVM_ALL_ON | UVM_DEC)

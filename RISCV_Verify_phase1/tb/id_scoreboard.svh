@@ -8,7 +8,7 @@ import common::*;
 `uvm_analysis_imp_decl(_scoreboard_act_id_out)
 
 class id_scoreboard extends uvm_component;
-    `uvm_component_utils(id_scoreboard)
+    `uvm_component_utils(id_scoreboard);
     uvm_analysis_imp_scoreboard_rstn #(rstn_seq_item,id_scoreboard) m_rstn_ap;
     uvm_analysis_imp_scoreboard_id #(id_seq_item,id_scoreboard) m_act_id_ap;
     uvm_analysis_imp_scoreboard_exp_id_out #(id_out_seq_item,id_scoreboard) m_exp_id_out_ap;  // from reference model
@@ -247,7 +247,7 @@ class id_scoreboard extends uvm_component;
 
     // monitor DUT inputs transaction
     function void write_scoreboard_id(id_seq_item t); 
-        `uvm_info(get_name(), $sformat("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
+        `uvm_info(get_name(), $sformatf("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
         act_in_q.push_back(t);
 
         // ===== 采样输入覆盖 =====
@@ -326,19 +326,19 @@ class id_scoreboard extends uvm_component;
                 id_out_seq_item act_item = act_out_q.pop_front();
 
                 // ---- pass-through signals ----
-                if (act_item.pc_out !== exp_item.pc) begin
+                if (act_item.pc_out !== exp_item.pc_out) begin
                     `uvm_error(get_name(),
                         $sformatf("PC mismatch! Expected: 0x%0h, Got: 0x%0h (exp.pc, act.pc_out)",
-                                exp_item.pc, act_item.pc_out));
+                                exp_item.pc_out, act_item.pc_out));
                 end
                 else begin
                     `uvm_info(get_name(), $sformatf("PC passthrough OK: 0x%0h", act_item.pc_out), UVM_LOW);
                 end
 
-                if (act_item.branch_out !== exp_item.branch_in) begin
+                if (act_item.branch_out !== exp_item.branch_out) begin
                     `uvm_error(get_name(),
-                        $sformatf("branch_in mismatch! Expected: %0b, Got: %0b (exp.branch_in, act.branch_out)",
-                                exp_item.branch_in, act_item.branch_out));
+                        $sformatf("branch_out mismatch! Expected: %0b, Got: %0b (exp.branch_out, act.branch_out)",
+                                exp_item.branch_out, act_item.branch_out));
                 end
                 else begin
                     `uvm_info(get_name(), $sformatf("branch passthrough OK: %0b", act_item.branch_out), UVM_LOW);
@@ -346,14 +346,14 @@ class id_scoreboard extends uvm_component;
 
                 // ---- main decode outputs comparison ----
                 // instruction (如果 id_out 包含 instr 字段)
-                if ($isunknown(exp_item.instr) || $isunknown(act_item.instr)) begin
-                    `uvm_warning(get_name(), $sformatf("instr contains X/Z: exp=0x%0h act=0x%0h", exp_item.instr, act_item.instr));
-                end
-                if (exp_item.instr !== act_item.instr) begin
-                    `uvm_error(get_name(),
-                        $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h",
-                                exp_item.instr, act_item.instr));
-                end
+                // if ($isunknown(exp_item.instr) || $isunknown(act_item.instr)) begin
+                //     `uvm_warning(get_name(), $sformatf("instr contains X/Z: exp=0x%0h act=0x%0h", exp_item.instr, act_item.instr));
+                // end
+                // if (exp_item.instr !== act_item.instr) begin
+                //     `uvm_error(get_name(),
+                //         $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h",
+                //                 exp_item.instr, act_item.instr));
+                // end
 
                 // reg rd id
                 if (exp_item.reg_rd_id !== act_item.reg_rd_id) begin

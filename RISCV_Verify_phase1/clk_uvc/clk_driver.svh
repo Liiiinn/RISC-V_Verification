@@ -16,12 +16,12 @@ class clk_driver extends uvm_driver;
       	super.build_phase(phase);
     endfunction : build_phase
 
-    virtual task run_phase(uvm_phase pahse);
+    virtual task run_phase(uvm_phase phase);
         `uvm_info(get_name(), $sformatf("Clock Driver is running with clock period: %0d ns", m_config.clk_period), UVM_MEDIUM)
-        m_config.m_vif.clk <= 0;
+        m_config.m_if.clk <= 0;
         forever begin
         	#(m_config.clk_period/2);
-            m_config.m_vif.clk <= ~m_config.m_vif.clk;
+            m_config.m_if.clk <= ~m_config.m_if.clk;
         end
     endtask : run_phase
 

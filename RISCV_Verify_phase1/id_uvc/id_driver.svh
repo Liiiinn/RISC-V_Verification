@@ -5,7 +5,7 @@
 import uvm_pkg::*;
 `include "uvm_macros.svh"
 
-class id_driver extends uvm_driver #(decode_item);   
+class id_driver extends uvm_driver #(id_seq_item);   
     `uvm_component_utils(id_driver)
     id_config m_config;
     
@@ -36,7 +36,7 @@ class id_driver extends uvm_driver #(decode_item);
         forever begin
             // Task 22: get next transaction
             seq_item_port.get_next_item(req_item);
-            `uvm_info(get_name(),$sformatf("Start decode interface transaction: instruction =%0d, pc=%0d, write_en=%0b, write_id=%0d, write_data=%0d, branch_in=%0b", req_item.instruction, req_item.pc, req_item.write_en, req_item.write_id, req_item.write_data, req_item.branch_in));
+            `uvm_info(get_name(),$sformatf("Start decode interface transaction: instruction =%0d, pc=%0d, write_en=%0b, write_id=%0d, write_data=%0d, branch_in=%0b", req_item.instruction, req_item.pc, req_item.write_en, req_item.write_id, req_item.write_data, req_item.branch_in),UVM_HIGH);
             @(m_config.m_vif.driver_cb);
              m_config.m_vif.monitor_cb.instruction <= req_item.instruction;
              m_config.m_vif.monitor_cb.pc <= req_item.pc;
