@@ -4,7 +4,7 @@ import common::*;
 
 class id_ref_model extends uvm_component;
 	uvm_analysis_imp #(id_seq_item,id_ref_model) analysis_imp;
-	uvm_analysis_port #(id_seq_item) id_ref_ap;
+	uvm_analysis_port #(id_out_seq_item) id_ref_ap;
 	`uvm_component_utils(id_ref_model)
 
 	function new(string name, uvm_component parent);
