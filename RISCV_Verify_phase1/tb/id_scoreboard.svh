@@ -30,7 +30,7 @@ class id_scoreboard extends uvm_component;
 
     // input variables bound to coverage
     bit write_en;
-    bit [31:0]write_data;
+    logic signed [31:0]write_data;
     bit [4:0]write_id;
     bit branch_in;
     bit [31:0]pc;
@@ -51,14 +51,14 @@ class id_scoreboard extends uvm_component;
 
 
 
-    covergroup id_rstn_covergroup @(posedge vif.clk);
+    covergroup id_rstn_covergroup;
         reset_cp: coverpoint reset_n{
             bins reset = {0};
             bins run = {1};
         }
     endgroup
 
-    covergroup id_in_covergroup @(posedge vif.clk);
+    covergroup id_in_covergroup;
         write_enable_cp: coverpoint write_en{
             bins write = {1};
             bins no_write = {0};
@@ -111,7 +111,7 @@ class id_scoreboard extends uvm_component;
         }
     endgroup: id_in_covergroup
 
-    covergroup id_out_covergroup @(posedge vif.clk);
+    covergroup id_out_covergroup;
         // deocde ouput coverage:
         im_cp : coverpoint immediate_data{
             // Idea: 可能还需要考虑mul和div的溢出
@@ -199,7 +199,7 @@ class id_scoreboard extends uvm_component;
         }
     endgroup: id_out_covergroup
 
-    covergroup cross_covergroup @(posedge vif.clk);
+    covergroup cross_covergroup;
         write_cross         : cross write_en, write_id;
         opcode_funct3_cross : cross opcode, funct3;
         opcode_funct7_cross : cross opcode, funct7;
@@ -275,7 +275,7 @@ class id_scoreboard extends uvm_component;
     // receive actual transaction from  DUT monitor
     function void write_scoreboard_act_id_out(id_out_seq_item t);
         `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", t.sprint()), UVM_HIGH);
-        act_out_q.push_back(t);
+         act_out_q.push_back(t);
 
         // ===== 采样输出覆盖 =====
         reg_rd_id      = t.reg_rd_id;

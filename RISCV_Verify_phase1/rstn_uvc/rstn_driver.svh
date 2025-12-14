@@ -22,7 +22,7 @@ class rst_driver extends uvm_driver #(rstn_seq_item);
 		m_config.m_vif.rstn <= 0;
 		forever begin
 			seq_item_port.get(seq_item);
-			`uvm_info(get_name(), $formatf("REST transaction delay = %0d length =%0d",seq_item.rstn_delay,seq_item.rstn_length),UVM_FULL)
+			`uvm_info(get_name(), $sformatf("REST transaction delay = %0d length =%0d",seq_item.rstn_delay,seq_item.rstn_length),UVM_FULL)
 			for(int nn=0; nn< seq_item.rstn_delay; nn++) begin
 				@(posedge m_config.m_vif.clk);
 			end

@@ -12,7 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default test settings
-TEST_NAME=${1:-top_test1}
+# TEST_NAME=${1:-top_test1}
+TEST_NAME=${1:-id_test}
 VERBOSITY=${2:-UVM_MEDIUM}
 COVERAGE=${3:-1}  # Enable coverage by default
 

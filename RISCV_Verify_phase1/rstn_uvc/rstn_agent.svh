@@ -36,6 +36,6 @@ class rstn_agent extends uvm_agent;
 
     function void end_of_elaboration_phase(uvm_phase phase);
       	super.end_of_elaboration_phase(phase);
-      	`uvm_info(get_name(),$formatf("RESET agent is alive"),UVM_LOW)
+      	`uvm_info(get_name(),$sformatf("RESET agent is alive"),UVM_LOW)
     endfunction : end_of_elaboration_phase
 endclass : rstn_agent
