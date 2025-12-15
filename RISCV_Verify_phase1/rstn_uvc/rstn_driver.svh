@@ -8,7 +8,7 @@ class rst_driver extends uvm_driver #(rstn_seq_item);
 
 	function new(string name, uvm_component parent = null);
 		super.new(name, parent);
-		if(!uvm_config_db #(rstn_config)::get(this,"","rst_config", m_config)) begin
+		if(!uvm_config_db #(rstn_config)::get(this,"","config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the rstn configuration!")
 		end
 	endfunction 

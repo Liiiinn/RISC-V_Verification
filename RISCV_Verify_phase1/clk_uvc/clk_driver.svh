@@ -7,13 +7,13 @@ class clk_driver extends uvm_driver;
 	clk_config m_config;
 	function new(string name = "clk_dirver", uvm_component parant = null);
 		super.new(name, parant);
-		if(!uvm_config_db #(clk_config)::get(this, "", "m_config", m_config)) begin
-			`uvm_fatal(get_name(), "Cannot find the VC configuration!")
-		end
 	endfunction 
 
     function void build_phase(uvm_phase phase);
       	super.build_phase(phase);
+		if(!uvm_config_db #(clk_config)::get(this, "", "m_config", m_config)) begin
+			`uvm_fatal(get_name(), "Cannot find the VC configuration!")
+		end
     endfunction : build_phase
 
     virtual task run_phase(uvm_phase phase);

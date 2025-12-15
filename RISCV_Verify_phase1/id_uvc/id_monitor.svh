@@ -13,7 +13,7 @@ class id_monitor extends uvm_monitor;
     uvm_analysis_port #(id_seq_item) m_analysis_port;
     function new(string name = "id_monitor", uvm_component parent = null);
         super.new(name, parent);
-        if (!uvm_config_db#(id_config)::get(this, "", "id_config", m_config)) begin
+        if (!uvm_config_db#(id_config)::get(this, "", "config", m_config)) begin
             `uvm_fatal(get_name(), "Could not get id_config")
         end
         m_analysis_port = new("m_analysis_port", this);

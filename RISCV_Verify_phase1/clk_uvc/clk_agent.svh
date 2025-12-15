@@ -14,11 +14,11 @@ class clk_agent extends uvm_agent;
 
 	function void build_phase (uvm_phase phase);
 		super.build_phase(phase);
-		if(!uvm_config_db #(clk_config)::get(this, "", "m_clk_config", m_config)) begin
+		if(!uvm_config_db #(clk_config)::get(this, "", "config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the clock configuration!")
 		end
 
-		uvm_config_db #(clk_config)::set(this, "m_driver","clk_config", m_config);
+		uvm_config_db #(clk_config)::set(this, "m_driver","m_config", m_config);
 		if(m_config.is_active) begin
 			m_driver = clk_driver::type_id::create("m_driver", this);
 		end

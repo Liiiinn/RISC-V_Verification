@@ -11,7 +11,7 @@ class id_driver extends uvm_driver #(id_seq_item);
     
     function new(string name, uvm_component parent = null);
         super.new(name, parent);
-        if (!uvm_config_db#(id_config)::get(this, "", "decode_config", m_config)) begin
+        if (!uvm_config_db#(id_config)::get(this, "", "config", m_config)) begin
             `uvm_fatal(get_name(), "Could not get decode_config")
         end
     endfunction

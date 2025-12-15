@@ -11,10 +11,10 @@ class id_agent extends uvm_agent;
 
 	function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
-		if(!uvm_config_db #(id_config)::get(this,"","id_config", m_config)) begin
+		if(!uvm_config_db #(id_config)::get(this,"","config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the id configuration!")
 		end
-		uvm_config_db #(id_config)::set(this,"m_driver","id_config", m_config);
+		uvm_config_db #(id_config)::set(this,"m_driver","m_config", m_config);
 		if(m_config.is_active == UVM_ACTIVE)begin
 			m_sequencer = uvm_sequencer #(id_seq_item)::type_id::create("id_sequencer", this);
 			m_driver = id_driver::type_id::create("id_driver", this);

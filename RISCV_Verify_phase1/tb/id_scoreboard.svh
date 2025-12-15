@@ -224,7 +224,7 @@ class id_scoreboard extends uvm_component;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if (!uvm_config_db#(clk_config)::get(this, "", "m_clk_config", m_clk_config))
+        if (!uvm_config_db#(clk_config)::get(this, "", "config", m_clk_config))
             `uvm_fatal("NOCONFIG", "No clk_config found for scoreboard");
         vif = m_clk_config.m_if;
         if (vif == null) 

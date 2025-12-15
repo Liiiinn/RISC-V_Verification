@@ -6,10 +6,10 @@ class rstn_monitor extends uvm_monitor;
 	function new(string name , uvm_component parent = null);
 		super.new(name, parent);
 		m_analysis_port = new("m_analysis_port", this);
-		if(!uvm_config_db #(rstn_config)::get(this,"","rstn_config", m_config)) begin
+		if(!uvm_config_db #(rstn_config)::get(this,"","config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the rstn configuration!")
 		end
-		m_analysis_port = new("m_analysis_port", this);
+		// m_analysis_port = new("m_analysis_port", this);
 	endfunction : new
 
 	function void build_phase(uvm_phase phase);

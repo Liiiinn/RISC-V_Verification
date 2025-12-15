@@ -13,7 +13,7 @@ class rstn_agent extends uvm_agent;
 	function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
 		// Read the uVC configuration object from UVM config DB.
-		if(!uvm_config_db #(rstn_config)::get(this,"","rstn_config", m_config)) begin
+		if(!uvm_config_db #(rstn_config)::get(this,"","config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the rstn configuration!")
 		end
 		// Store uVC configuration into UVM config DB used by the uVC.

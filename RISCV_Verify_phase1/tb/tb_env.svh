@@ -51,8 +51,9 @@ class tb_env extends uvm_env;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         // Build all TB VC's
-        uvm_config_db #(clk_config)::set(this,"m_clk_agent*","m_clk_config", m_top_config.m_clk_config); // 将在clk_agent的build_phase中get
+        uvm_config_db #(clk_config)::set(this,"m_clk_agent*","config", m_top_config.m_clk_config); // 将在clk_agent的build_phase中get
         m_clk_agent = clk_agent::type_id::create("m_clk_agent",this);
+        uvm_config_db #(clk_config)::set(this,"m_id_scoreboard","config", m_top_config.m_clk_config);
         uvm_config_db #(rstn_config)::set(this,"m_rstn_agent*","config", m_top_config.m_rstn_config);
         m_rstn_agent = rstn_agent::type_id::create("m_rstn_agent",this);
         uvm_config_db #(id_out_config)::set(this,"m_id_out_agent*","config", m_top_config.m_id_out_config);
