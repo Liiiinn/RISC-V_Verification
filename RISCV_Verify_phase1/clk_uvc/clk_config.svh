@@ -4,6 +4,7 @@ import uvm_pkg::*;
 class clk_config extends uvm_object;	
 	bit is_active = 1;
 	int unsigned clk_period = 100; // in ns
+	virtual clk_if m_if;
 
 	`uvm_object_utils_begin(clk_config)
 		`uvm_field_int(is_active, UVM_ALL_ON | UVM_DEC)
@@ -11,7 +12,7 @@ class clk_config extends uvm_object;
 	`uvm_object_utils_end
 	
 	// interface 
-	virtual clk_if m_if;
+
 
 	function new(string name = "clk_config");
 		super.new(name);

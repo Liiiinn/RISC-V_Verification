@@ -85,6 +85,8 @@ module tb_top;
         // Create TB top configuration and store it into UVM config DB.
         top_config  m_top_config;
         m_top_config = new("m_top_config");
+        i_clk_if.clk = 0;
+        i_rstn_if.rstn = 1; 
         uvm_config_db #(top_config)::set(null,"tb_top","top_config", m_top_config);
         // Save all virtual interface instances into configuration
         m_top_config.m_clk_config.m_if = i_clk_if;

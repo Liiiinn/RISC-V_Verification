@@ -18,7 +18,8 @@ class clk_driver extends uvm_driver;
 
     virtual task run_phase(uvm_phase phase);
         `uvm_info(get_name(), $sformatf("Clock Driver is running with clock period: %0d ns", m_config.clk_period), UVM_MEDIUM)
-        m_config.m_if.clk <= 0;
+        phase.raise_objection(this);
+		m_config.m_if.clk <= 0;
 
 		// ✅ 添加调试信息
     	`uvm_info(get_name(), "Clock driver starting to toggle clock", UVM_LOW)
