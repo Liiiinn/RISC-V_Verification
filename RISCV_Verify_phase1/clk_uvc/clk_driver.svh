@@ -19,9 +19,17 @@ class clk_driver extends uvm_driver;
     virtual task run_phase(uvm_phase phase);
         `uvm_info(get_name(), $sformatf("Clock Driver is running with clock period: %0d ns", m_config.clk_period), UVM_MEDIUM)
         m_config.m_if.clk <= 0;
+
+		// ✅ 添加调试信息
+    	`uvm_info(get_name(), "Clock driver starting to toggle clock", UVM_LOW)
+
         forever begin
         	#(m_config.clk_period/2);
             m_config.m_if.clk <= ~m_config.m_if.clk;
+
+			// ✅ 添加调试信息（每 10 个时钟周期打印一次）
+        	if ($time % (m_config.clk_period * 10) == 0)
+            `uvm_info(get_name(), $sformatf("Clock toggling at time %0t", $time), UVM_DEBUG)
         end
     endtask : run_phase
 

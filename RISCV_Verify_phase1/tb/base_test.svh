@@ -56,8 +56,6 @@ class base_test extends uvm_test;
     // FUNCTION: run_phase
     // Start UVM test in running phase.
     //------------------------------------------------------------------------------
-
-
     virtual task run_phase(uvm_phase phase);
         rstn_seq rstn;
         id_seq_random_sequence id;

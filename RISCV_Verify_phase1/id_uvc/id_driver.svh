@@ -11,13 +11,16 @@ class id_driver extends uvm_driver #(id_seq_item);
     
     function new(string name, uvm_component parent = null);
         super.new(name, parent);
-        if (!uvm_config_db#(id_config)::get(this, "", "config", m_config)) begin
-            `uvm_fatal(get_name(), "Could not get decode_config")
-        end
     endfunction
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
+
+        if (!uvm_config_db#(id_config)::get(this, "", "config", m_config)) begin
+            `uvm_fatal(get_name(), "Could not get id_config")
+        end
+        
+        `uvm_info(get_name(), "ID Driver built successfully", UVM_MEDIUM)
     endfunction :build_phase
     
     virtual task run_phase(uvm_phase phase);
@@ -48,10 +51,7 @@ class id_driver extends uvm_driver #(id_seq_item);
              //@(m_config.m_vif.driver_cb);
             seq_item_port.item_done();
         end
-
-    endtask
-    
-    
+    endtask    
 endclass
 
 `endif

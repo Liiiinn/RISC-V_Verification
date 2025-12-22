@@ -35,7 +35,7 @@ class id_scoreboard extends uvm_component;
     bit branch_in;
     bit [31:0]pc;
         // details inside instruction_type
-    bit opcode;
+    bit [6:0] opcode;
     bit [2:0] funct3;
     bit [6:0] funct7;
     bit [4:0] rd;
@@ -44,7 +44,7 @@ class id_scoreboard extends uvm_component;
 
     // output variables bound to coverage
     bit[4:0] reg_rd_id;
-    bit[31:0] immediate_data,read_data1,read_data2;
+    logic signed [31:0] immediate_data,read_data1,read_data2;
     control_type control_signals;
     bit branch_out;
     bit [31:0] pc_out;
@@ -81,6 +81,7 @@ class id_scoreboard extends uvm_component;
             bins B_type = {7'b1100011};
             bins U_type = {7'b0110111, 7'b0010111};
             bins J_type = {7'b1101111};
+            bins illegal = default;
         }
         funct3_cp : coverpoint funct3{
             bins funct3_000 = {3'b000};

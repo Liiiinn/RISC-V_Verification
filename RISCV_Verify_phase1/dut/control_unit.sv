@@ -4,8 +4,8 @@ import common::*;
 
 
 module control_unit(
-    input clk,
-    input reset_n,
+    input logic clk,
+    input logic reset_n,
     input instruction_type instruction, 
     output control_type control
 );

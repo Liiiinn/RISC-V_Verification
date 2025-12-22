@@ -15,15 +15,24 @@ class id_agent extends uvm_agent;
 			`uvm_fatal(get_name(), "Cannot find the id configuration!")
 		end
 		uvm_config_db #(id_config)::set(this,"m_driver","m_config", m_config);
+
 		if(m_config.is_active == UVM_ACTIVE)begin
-			m_sequencer = uvm_sequencer #(id_seq_item)::type_id::create("id_sequencer", this);
-			m_driver = id_driver::type_id::create("id_driver", this);
-		end
-		if(m_config.has_monitor) begin
-			m_monitor = id_monitor::type_id::create("id_monitor",this);
+			m_sequencer = uvm_sequencer #(id_seq_item)::type_id::create("m_sequencer", this);
+			m_driver = id_driver::type_id::create("m_driver", this);
 		end
 
+		if(m_config.has_monitor) begin
+			m_monitor = id_monitor::type_id::create("m_monitor",this);
+		end
 	endfunction : build_phase
+
+	// ✅ 添加 end_of_elaboration_phase 打印信息，确认创建成功
+	function void end_of_elaboration_phase(uvm_phase phase);
+    	super.end_of_elaboration_phase(phase);
+    	`uvm_info(get_name(), $sformatf("ID Agent is alive (is_active=%s, has_monitor=%s)", 
+                                     (m_config.is_active == UVM_ACTIVE) ? "ACTIVE" : "PASSIVE",
+                                     m_config.has_monitor ? "TRUE" : "FALSE"), UVM_MEDIUM)
+	endfunction : end_of_elaboration_phase
 
 	function void connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
@@ -31,8 +40,4 @@ class id_agent extends uvm_agent;
 			m_driver.seq_item_port.connect(m_sequencer.seq_item_export);
 		end
 	endfunction : connect_phase
-
-	function void end_of_elaboration_phase(uvm_phase phase);
-		super.end_of_elaboration_phase(phase);
-	endfunction : end_of_elaboration_phase
 endclass : id_agent
