@@ -7,8 +7,8 @@ class clk_config extends uvm_object;
 	virtual clk_if m_if;
 
 	`uvm_object_utils_begin(clk_config)
-		`uvm_field_int(is_active, UVM_ALL_ON | UVM_DEC)
-		`uvm_field_int(clk_period,UVM_ALL_ON | UVM_DEC)
+	`uvm_field_int(is_active, UVM_ALL_ON | UVM_DEC)
+	`uvm_field_int(clk_period,UVM_ALL_ON | UVM_DEC)
 	`uvm_object_utils_end
 	
 	// interface 

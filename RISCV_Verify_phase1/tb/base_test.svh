@@ -89,6 +89,7 @@ class base_test extends uvm_test;
         #100ns;
         // Drop objection if no UVM test is running
         phase.drop_objection(this);
+        `uvm_info(get_name(), "Test completed, objection dropped", UVM_LOW)
     endtask : run_phase
 
 endclass : base_test

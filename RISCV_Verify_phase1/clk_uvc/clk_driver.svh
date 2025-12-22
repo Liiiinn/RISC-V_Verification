@@ -11,26 +11,27 @@ class clk_driver extends uvm_driver;
 
     function void build_phase(uvm_phase phase);
       	super.build_phase(phase);
-		if(!uvm_config_db #(clk_config)::get(this, "", "m_config", m_config)) begin
+		if(!uvm_config_db #(clk_config)::get(this, "", "clk_config", m_config)) begin
 			`uvm_fatal(get_name(), "Cannot find the VC configuration!")
 		end
     endfunction : build_phase
 
     virtual task run_phase(uvm_phase phase);
+	    int counter = 0;
         `uvm_info(get_name(), $sformatf("Clock Driver is running with clock period: %0d ns", m_config.clk_period), UVM_MEDIUM)
-        phase.raise_objection(this);
-		m_config.m_if.clk <= 0;
+        // phase.raise_objection(this);
+		//
 
-		// ✅ 添加调试信息
     	`uvm_info(get_name(), "Clock driver starting to toggle clock", UVM_LOW)
-
+		 m_config.m_if.clk <= 0;
         forever begin
         	#(m_config.clk_period/2);
+			// #(100/2);
             m_config.m_if.clk <= ~m_config.m_if.clk;
-
-			// ✅ 添加调试信息（每 10 个时钟周期打印一次）
-        	if ($time % (m_config.clk_period * 10) == 0)
-            `uvm_info(get_name(), $sformatf("Clock toggling at time %0t", $time), UVM_DEBUG)
+			counter++;
+			// 
+        	if (counter % 10 == 0)
+            `uvm_info(get_name(), $sformatf("Counter :%0d", counter), UVM_LOW)
         end
     endtask : run_phase
 

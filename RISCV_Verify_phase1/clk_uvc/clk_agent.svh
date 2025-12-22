@@ -7,7 +7,7 @@ class clk_agent extends uvm_agent;
    	clk_config m_config;
 
 
-  	function new(string name = "clk_agent", uvm_component parent = null);
+  	function new(string name = "", uvm_component parent = null);
   	  	super.new(name, parent);
   	endfunction : new
 
@@ -18,9 +18,9 @@ class clk_agent extends uvm_agent;
 			`uvm_fatal(get_name(), "Cannot find the clock configuration!")
 		end
 
-		uvm_config_db #(clk_config)::set(this, "m_driver","m_config", m_config);
-		if(m_config.is_active) begin
-			m_driver = clk_driver::type_id::create("m_driver", this);
+		uvm_config_db #(clk_config)::set(this, "*","clk_config", m_config);
+		if(m_config.is_active == UVM_ACTIVE) begin
+			m_driver = clk_driver::type_id::create("clk_driver", this);
 		end
 	endfunction : build_phase
  
