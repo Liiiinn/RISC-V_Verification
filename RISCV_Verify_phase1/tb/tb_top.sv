@@ -105,19 +105,16 @@ module tb_top;
 
     // Monitor tb_clk signal and print every 10 cycles
     initial begin
-    int clk_cnt = 0;
-    forever begin
-        @(posedge tb_clk);
-        clk_cnt++;
+        int clk_cnt = 0;
+        forever begin
+            @(posedge tb_clk);
+            clk_cnt++;
 
-        if (clk_cnt % 10 == 0) begin
-            `uvm_info("TB_CLK_MON",
-                      $sformatf("Observed %0d posedges of tb_clk @ %0t",
-                                clk_cnt, $time),
-                      UVM_LOW)
+            if (clk_cnt % 10 == 0) begin
+                $display("[%0t][TB_CLK_MON] Observed %0d posedges of tb_clk",
+                        $time, clk_cnt);
+            end
         end
     end
-end
-
 
 endmodule
