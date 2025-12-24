@@ -56,9 +56,9 @@ module tb_top;
     assign i_id_out_if.read_data2 = tb_read_data2;
     assign i_id_out_if.immediate_data = tb_immediate_data;
     assign i_id_out_if.control_signals = tb_control_signals;
-//    assign i_id_out_if.debug_reg = tb_debug_reg;
+    // assign i_id_out_if.debug_reg = tb_debug_reg;
 
-    // Instantiation of
+    // Instantiation
     decode_stage inst_decode_stage(/*AUTOINST*/
 		// Outputs
 		.branch_out		(tb_branch_out),
@@ -67,7 +67,7 @@ module tb_top;
 		.read_data1		(tb_read_data1),	 // Templated
 		.read_data2		(tb_read_data2),	 // Templated
 		.immediate_data	(tb_immediate_data), // Templated
-//		.debug_reg		(tb_debug_reg),
+		// .debug_reg		(tb_debug_reg),
 		.control_signals	(tb_control_signals), // Templated
 		
 		// Inputs
@@ -78,7 +78,8 @@ module tb_top;
 		.write_en		(tb_write_en), // Templated
 		.write_id		(tb_write_id),	 // Templated
 		.write_data		(tb_write_data),	 // Templated
-		.branch_in		(tb_branch_in)); // Templated
+		.branch_in		(tb_branch_in) // Templated
+    );
 
     // Initialize TB configuration
     initial begin
@@ -93,11 +94,30 @@ module tb_top;
         m_top_config.m_rstn_config.m_vif = i_rstn_if;
         m_top_config.m_id_config.m_vif = i_id_if;
         m_top_config.m_id_out_config.m_vif = i_id_out_if;
+
+        i_clk_if.start_clk(m_top_config.m_clk_config.clk_period); // Start clock toggling with defined period
     end
 
     // Start UVM test_base environment
     initial begin
         run_test("basic_test");
     end
+
+    // Monitor tb_clk signal and print every 10 cycles
+    initial begin
+    int clk_cnt = 0;
+    forever begin
+        @(posedge tb_clk);
+        clk_cnt++;
+
+        if (clk_cnt % 10 == 0) begin
+            `uvm_info("TB_CLK_MON",
+                      $sformatf("Observed %0d posedges of tb_clk @ %0t",
+                                clk_cnt, $time),
+                      UVM_LOW)
+        end
+    end
+end
+
 
 endmodule

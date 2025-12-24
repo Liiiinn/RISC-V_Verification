@@ -3,7 +3,7 @@ import uvm_pkg::*;
 
 class clk_agent extends uvm_agent;
   	`uvm_component_utils(clk_agent)
-	clk_driver m_driver;
+	// clk_driver m_driver;
    	clk_config m_config;
 
 
@@ -19,9 +19,9 @@ class clk_agent extends uvm_agent;
 		end
 
 		uvm_config_db #(clk_config)::set(this, "*","clk_config", m_config);
-		if(m_config.is_active == UVM_ACTIVE) begin
-			m_driver = clk_driver::type_id::create("clk_driver", this);
-		end
+		// if(m_config.is_active == UVM_ACTIVE) begin
+		// 	m_driver = clk_driver::type_id::create("clk_driver", this);
+		// end
 	endfunction : build_phase
  
 	function void connect_phase(uvm_phase phase);

@@ -1,5 +1,8 @@
-interface clk_if();
-
+interface clk_if;
     logic clk;
 
-endinterface : clk_if
+    task start_clk(int unsigned period);
+        clk = 0;
+        forever #(period/2) clk = ~clk;
+    endtask
+endinterface

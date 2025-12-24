@@ -23,7 +23,8 @@ class clk_driver extends uvm_driver;
 		//
 
     	`uvm_info(get_name(), "Clock driver starting to toggle clock", UVM_LOW)
-		 m_config.m_if.clk <= 0;
+		m_config.m_if.clk <= 0;
+		
         forever begin
         	#(m_config.clk_period/2);
 			// #(100/2);
