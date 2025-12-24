@@ -17,20 +17,24 @@ class rstn_agent extends uvm_agent;
 			`uvm_fatal(get_name(), "Cannot find the rstn configuration!")
 		end
 		// Store uVC configuration into UVM config DB used by the uVC.
-		uvm_config_db #(rstn_config)::set(this,"m_driver","rstn_config", m_config);
-		if(m_config.is_active == UVM_ACTIVE)begin
-			m_sequencer = uvm_sequencer #(rstn_seq_item)::type_id::create("rstn_sequencer", this);
-			m_driver = rst_driver::type_id::create("rstn_driver", this);
-		end
+		uvm_config_db#(rstn_config)::set(this, "m_driver", "rstn_config", m_config);
+        uvm_config_db#(rstn_config)::set(this, "rstn_monitor", "config", m_config);
+		if(m_config.is_active == UVM_ACTIVE) begin
+            m_sequencer = uvm_sequencer#(rstn_seq_item)::type_id::create("m_sequencer", this);
+            m_driver = rst_driver::type_id::create("m_driver", this);
+            `uvm_info(get_name(), "RSTN sequencer and driver created", UVM_MEDIUM)
+        end
 		if(m_config.has_monitor == UVM_ACTIVE) begin
-			m_monitor = rstn_monitor::type_id::create("rstn_monitor", this);
-		end
+            m_monitor = rstn_monitor::type_id::create("rstn_monitor", this);
+            `uvm_info(get_name(), "RSTN monitor created", UVM_MEDIUM)
+        end
 	endfunction : build_phase
 
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
         if(m_config.is_active == UVM_ACTIVE) begin
             m_driver.seq_item_port.connect(m_sequencer.seq_item_export);
+            `uvm_info(get_name(), "RSTN driver connected to sequencer", UVM_MEDIUM)
         end
     endfunction : connect_phase
 

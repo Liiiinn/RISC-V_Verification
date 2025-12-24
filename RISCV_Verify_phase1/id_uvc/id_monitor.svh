@@ -27,12 +27,16 @@ class id_monitor extends uvm_monitor;
             id_seq_item item;
             
             // Wait for reset deassertion
-            // wait(m_config.m_vif.reset_n);
-            // `uvm_info(get_name(), "Reset released, starting monitoring", UVM_HIGH);
+            if (!m_config.m_vif.rstn) begin
+                `uvm_info(get_name(), "Waiting for reset deassertion...", UVM_LOW);
+                wait(m_config.m_vif.rstn);
+                `uvm_info(get_name(), "Reset released, starting monitoring", UVM_LOW);
+            end
             
             // Monitor transactions while not in reset
             while(m_config.m_vif.rstn) begin
                 @(m_config.m_vif.monitor_cb);
+                `uvm_info(get_name(), "Captured clock edge", UVM_MEDIUM);
                 
                 // Create new item and capture all signals
                 item = id_seq_item::type_id::create("item");

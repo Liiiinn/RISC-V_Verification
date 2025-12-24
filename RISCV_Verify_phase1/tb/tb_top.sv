@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 
 module tb_top;
     // Include basic packages
@@ -81,12 +82,54 @@ module tb_top;
 		.branch_in		(tb_branch_in) // Templated
     );
 
+    // Clock generation - Traditional approach
+    initial begin
+        $display("[TB_TOP @ %0t] === CLOCK GENERATION TEST START ===", $time);
+        $display("[TB_TOP @ %0t] Initializing clock to 0", $time);
+        i_clk_if.clk = 1'b0;
+        $display("[TB_TOP @ %0t] Clock initialized, value = %0b", $time, i_clk_if.clk);
+    end
+    
+    // Separate always block for clock generation (most reliable method)
+    integer clk_cycle = 0;
+    always begin
+        #5;
+        i_clk_if.clk = 1'b0;
+        if (clk_cycle < 10) $display("[TB_TOP @ %0t] clk = 0", $time);
+        
+        #5;
+        i_clk_if.clk = 1'b1;
+        clk_cycle++;
+        if (clk_cycle <= 10) $display("[TB_TOP @ %0t] clk = 1 (cycle %0d)", $time, clk_cycle);
+    end
+    
+    // Simple clock monitor
+    initial begin
+        integer clk_edges = 0;
+        forever begin
+            @(i_clk_if.clk);
+            clk_edges++;
+            if (clk_edges <= 10)
+                $display("[TB_TOP @ %0t] Clock edge #%0d, clk=%0b", $time, clk_edges, i_clk_if.clk);
+        end
+    end
+
+    // Monitor clock toggles for debug (DISABLED - may interfere with clock generation)
+    // initial begin
+    //     int clk_count = 0;
+    //     forever begin
+    //         @(i_clk_if.clk);  // 检测任何变化（上升或下降）
+    //         clk_count++;
+    //         if (clk_count <= 10)
+    //             $display("[TB_TOP @ %0t ps = %0.1f ns] Clock toggle #%0d, clk=%0b", $time, $time/1000.0, clk_count, i_clk_if.clk);
+    //     end
+    // end
+
     // Initialize TB configuration
     initial begin
         // Create TB top configuration and store it into UVM config DB.
         top_config  m_top_config;
         m_top_config = new("m_top_config");
-        i_clk_if.clk = 0;
         i_rstn_if.rstn = 1; 
         uvm_config_db #(top_config)::set(null,"tb_top","top_config", m_top_config);
         // Save all virtual interface instances into configuration
@@ -94,8 +137,6 @@ module tb_top;
         m_top_config.m_rstn_config.m_vif = i_rstn_if;
         m_top_config.m_id_config.m_vif = i_id_if;
         m_top_config.m_id_out_config.m_vif = i_id_out_if;
-
-        i_clk_if.start_clk(m_top_config.m_clk_config.clk_period); // Start clock toggling with defined period
     end
 
     // Start UVM test_base environment
@@ -103,18 +144,33 @@ module tb_top;
         run_test("basic_test");
     end
 
-    // Monitor tb_clk signal and print every 10 cycles
     initial begin
-        int clk_cnt = 0;
-        forever begin
-            @(posedge tb_clk);
-            clk_cnt++;
+        #100000; // 100us timeout
+        $display("================================");
+        $display("ERROR: Simulation timeout!");
+        $display("================================");
+        $fatal(1, "Test did not complete in time");
+    end
 
-            if (clk_cnt % 10 == 0) begin
-                $display("[%0t][TB_CLK_MON] Observed %0d posedges of tb_clk",
-                        $time, clk_cnt);
-            end
-        end
+    // Monitor tb_clk signal and print every 10 cycles
+    // initial begin
+    //     int clk_cnt = 0;
+    //     forever begin
+    //         @(posedge tb_clk);
+    //         clk_cnt++;
+
+    //         if (clk_cnt % 10 == 0) begin
+    //             $display("[%0t][TB_CLK_MON] Observed %0d posedges of tb_clk",
+    //                     $time, clk_cnt);
+    //         end
+    //     end
+    // end
+
+    int clk_count = 0;
+    always @(posedge tb_clk) begin
+        clk_count++;
+        if (clk_count % 100 == 0)
+            $display("[%0t] Clock count = %0d, rstn = %0b", $time, clk_count, tb_rstn);
     end
 
 endmodule

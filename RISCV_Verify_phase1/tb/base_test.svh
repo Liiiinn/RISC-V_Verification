@@ -75,14 +75,13 @@ class base_test extends uvm_test;
         rstn.start(m_tb_env.m_rstn_agent.m_sequencer);
 
         // Randomize input data
-        begin
-            repeat (no_of_data) begin
-                id = id_seq_random_sequence::type_id::create("id");
-                if (!id.randomize()) begin
-                    `uvm_fatal(get_name(), "Failed to randomize id inputs.")
-                end
-                id.start(m_tb_env.m_id_agent.m_sequencer);
+        `uvm_info(get_name(), $sformatf("Starting %0d ID transactions", no_of_data), UVM_LOW)
+        repeat (no_of_data) begin
+            id = id_seq_random_sequence::type_id::create("id");
+            if (!id.randomize()) begin
+                `uvm_fatal(get_name(), "Failed to randomize id inputs.")
             end
+            id.start(m_tb_env.m_id_agent.m_sequencer);
         end
         
         // When both processes are done, wait 100ns

@@ -27,7 +27,9 @@ class rstn_monitor extends uvm_monitor;
         `uvm_info(get_name(), "RSTN monitor starting", UVM_LOW)
 
 		// ✅ 等待第一个时钟沿
+        `uvm_info(get_name(), "Waiting for first negedge clk...", UVM_LOW)
         @(negedge m_config.m_vif.clk);
+        `uvm_info(get_name(), $sformatf("First negedge detected, rstn=%0b", m_config.m_vif.rstn), UVM_LOW)
         prev_rstn = m_config.m_vif.rstn;
 
 		forever begin
