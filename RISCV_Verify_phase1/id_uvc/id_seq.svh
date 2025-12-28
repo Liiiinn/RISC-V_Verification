@@ -47,6 +47,15 @@ class id_seq_random_sequence extends id_seq_base_sequence;
         branch_in.branch_btb_addr == 0;
     }
 
+    constraint instruction_c {
+        instruction.rs1 inside {[0:31]};
+        instruction.rs2 inside {[0:31]};
+        instruction.rd inside {[0:31]};
+        instruction.funct3 inside {[0:7]};
+        instruction.funct7 inside {[0:127]};
+        instruction.opcode inside {7'b0110011, 7'b0010011, 7'b0000011, 7'b1100111, 7'b0100011, 7'b1100011, 7'b0110111, 7'b0010111, 7'b1101111};
+    }
+
     virtual task body();
         id_seq_item req;
         //? repeat or not?
