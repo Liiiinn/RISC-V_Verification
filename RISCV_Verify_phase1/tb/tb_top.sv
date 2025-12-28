@@ -104,8 +104,9 @@ module tb_top;
     end
     
     // Simple clock monitor
+    integer clk_edges;
     initial begin
-        integer clk_edges = 0;
+        clk_edges = 0;
         forever begin
             @(i_clk_if.clk);
             clk_edges++;

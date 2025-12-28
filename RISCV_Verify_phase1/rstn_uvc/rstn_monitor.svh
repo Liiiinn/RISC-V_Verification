@@ -19,7 +19,7 @@ class rstn_monitor extends uvm_monitor;
 
 	task run_phase(uvm_phase phase);
 		rstn_seq_item seq_item;
-		int unsigned clocks;
+		int unsigned clocks;  // Would be always 1 in this monitor
 		logic rstn;
 		logic prev_rstn;
 
