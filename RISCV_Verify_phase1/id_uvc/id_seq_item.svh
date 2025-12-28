@@ -30,7 +30,7 @@ class id_seq_item extends uvm_sequence_item;
     rand int unsigned write_en;
     rand logic [4:0] write_id;
     randc logic [31:0] write_data;
-    rand logic branch_in;
+    rand branch_predict_type branch_in;
     rand logic [31:0] pc;
     randc logic [4:0] reg_id;
     randc logic [2:0] funct3;

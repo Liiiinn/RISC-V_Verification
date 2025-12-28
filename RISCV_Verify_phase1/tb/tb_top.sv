@@ -7,7 +7,6 @@ module tb_top;
     `include "uvm_macros.svh"
 
     // Include optional packages
-     
     import common::*;
 
     // uVC TB signal variables
