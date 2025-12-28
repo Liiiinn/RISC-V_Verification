@@ -48,6 +48,10 @@ class id_seq_item extends uvm_sequence_item;
             Instr_J_type   := 10
         };
     }
+
+   constraint branch_constraint {
+        branch_in dist {1'b0 := 50, 1'b1 := 50};
+    }
    constraint reg_id_constraint {
     reg_id inside {[1:31]};
   }
