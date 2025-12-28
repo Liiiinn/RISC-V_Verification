@@ -33,9 +33,10 @@ class id_ref_model extends uvm_component;
 		exp.read_data1 = 0;
 		exp.read_data2 = 0;
 		exp.immediate_data = 0;
-		exp.pc_out = 0;
-		exp.branch_out = 0;
-		exp.reg_rd_id = 0;
+		// exp.pc_out = 0;
+		// exp.branch_out = 0;
+		// exp.reg_rd_id = 0;
+		
 		// Initialize all fields in control_signals struct to zero
 		exp.control_signals.reg_write = 0;
 		exp.control_signals.mem_to_reg = 0;

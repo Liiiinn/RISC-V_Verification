@@ -24,7 +24,7 @@ class id_seq_random_sequence extends id_seq_base_sequence;
     rand instruction_type instruction;
     rand int unsigned write_en;
     randc logic [31:0] write_data;
-    rand logic branch_in;
+    rand branch_predict_type branch_in;
     rand logic [31:0] pc;
     randc logic [4:0] reg_id;
     int unsigned num_transactions = 100;
@@ -38,10 +38,22 @@ class id_seq_random_sequence extends id_seq_base_sequence;
         };
     }
     constraint branch_in_c{
-        branch_in dist{
+        branch_in.branch_taken_predict dist{
             0 :/ 3,
             1 :/ 1
         };
+        branch_in.current_GHSR == 0;
+        branch_in.branch_btb_hit == 0;
+        branch_in.branch_btb_addr == 0;
+    }
+
+    constraint instruction_c {
+        instruction.rs1 inside {[0:31]};
+        instruction.rs2 inside {[0:31]};
+        instruction.rd inside {[0:31]};
+        instruction.funct3 inside {[0:7]};
+        instruction.funct7 inside {[0:127]};
+        instruction.opcode inside {7'b0110011, 7'b0010011, 7'b0000011, 7'b1100111, 7'b0100011, 7'b1100011, 7'b0110111, 7'b0010111, 7'b1101111};
     }
 
     virtual task body();

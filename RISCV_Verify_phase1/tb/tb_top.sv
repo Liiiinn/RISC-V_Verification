@@ -7,7 +7,6 @@ module tb_top;
     `include "uvm_macros.svh"
 
     // Include optional packages
-     
     import common::*;
 
     // uVC TB signal variables
@@ -95,34 +94,23 @@ module tb_top;
     always begin
         #5;
         i_clk_if.clk = 1'b0;
-        if (clk_cycle < 10) $display("[TB_TOP @ %0t] clk = 0", $time);
+        // if (clk_cycle < 10) $display("[TB_TOP @ %0t] clk = 0", $time);
         
         #5;
         i_clk_if.clk = 1'b1;
         clk_cycle++;
-        if (clk_cycle <= 10) $display("[TB_TOP @ %0t] clk = 1 (cycle %0d)", $time, clk_cycle);
+        // if (clk_cycle <= 10) $display("[TB_TOP @ %0t] clk = 1 (cycle %0d)", $time, clk_cycle);
     end
     
     // Simple clock monitor
-    integer clk_edges;
-    initial begin
-        clk_edges = 0;
-        forever begin
-            @(i_clk_if.clk);
-            clk_edges++;
-            if (clk_edges <= 10)
-                $display("[TB_TOP @ %0t] Clock edge #%0d, clk=%0b", $time, clk_edges, i_clk_if.clk);
-        end
-    end
-
-    // Monitor clock toggles for debug (DISABLED - may interfere with clock generation)
+    // integer clk_edges;
     // initial begin
-    //     int clk_count = 0;
+    //     clk_edges = 0;
     //     forever begin
-    //         @(i_clk_if.clk);  // 检测任何变化（上升或下降）
-    //         clk_count++;
-    //         if (clk_count <= 10)
-    //             $display("[TB_TOP @ %0t ps = %0.1f ns] Clock toggle #%0d, clk=%0b", $time, $time/1000.0, clk_count, i_clk_if.clk);
+    //         @(i_clk_if.clk);
+    //         clk_edges++;
+    //         if (clk_edges <= 10)
+    //             $display("[TB_TOP @ %0t] Clock edge #%0d, clk=%0b", $time, clk_edges, i_clk_if.clk);
     //     end
     // end
 
@@ -152,20 +140,6 @@ module tb_top;
         $display("================================");
         $fatal(1, "Test did not complete in time");
     end
-
-    // Monitor tb_clk signal and print every 10 cycles
-    // initial begin
-    //     int clk_cnt = 0;
-    //     forever begin
-    //         @(posedge tb_clk);
-    //         clk_cnt++;
-
-    //         if (clk_cnt % 10 == 0) begin
-    //             $display("[%0t][TB_CLK_MON] Observed %0d posedges of tb_clk",
-    //                     $time, clk_cnt);
-    //         end
-    //     end
-    // end
 
     int clk_count = 0;
     always @(posedge tb_clk) begin

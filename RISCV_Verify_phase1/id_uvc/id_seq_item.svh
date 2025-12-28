@@ -30,7 +30,7 @@ class id_seq_item extends uvm_sequence_item;
     rand int unsigned write_en;
     rand logic [4:0] write_id;
     randc logic [31:0] write_data;
-    rand logic branch_in;
+    rand branch_predict_type branch_in;
     rand logic [31:0] pc;
     randc logic [4:0] reg_id;
     randc logic [2:0] funct3;
@@ -38,7 +38,7 @@ class id_seq_item extends uvm_sequence_item;
     randc logic [19:0] imm_20bit;
     randc instr_type my_instr;
 
-   constraint instr_type_distribution {
+    constraint instr_type_distribution {
         instruction dist {
             Instr_R_type   := 25,
             Instr_I_type   := 25,
@@ -48,9 +48,15 @@ class id_seq_item extends uvm_sequence_item;
             Instr_J_type   := 10
         };
     }
+    constraint reg_id_constraint {
+        reg_id inside {[1:31]};
+    }
 
    constraint branch_constraint {
         branch_in dist {1'b0 := 50, 1'b1 := 50};
+        branch_in.current_GHSR == 0;
+        branch_in.branch_btb_hit == 0;
+        branch_in.branch_btb_addr == 0;
     }
    constraint reg_id_constraint {
     reg_id inside {[1:31]};
