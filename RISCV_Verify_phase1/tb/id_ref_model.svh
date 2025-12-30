@@ -60,13 +60,14 @@ class id_ref_model extends uvm_component;
 		exp.branch_out = item.branch_in;
 		exp.reg_rd_id = tr.rd;
 		// Filling control_signals
-		exp.control_signals.funct3 = tr.funct3;
-		exp.control_signals.rs1_id = tr.rs1;
-		exp.control_signals.rs2_id = tr.rs2;
 
 
 		case(opcode)
 			7'b0110011: begin // R-type
+			    exp.control_signals.rs1_id = tr.rs1;
+				exp.control_signals.rs2_id = tr.rs2;
+				exp.control_signals.funct3 = tr.funct3;
+
 				exp.immediate_data = 0;
 				exp.control_signals.reg_write = 1'b1;
 				exp.control_signals.encoding = R_TYPE;
@@ -106,6 +107,9 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.reg_write = 1'b1;
 				exp.control_signals.encoding = I_TYPE;
 				exp.control_signals.alu_src = 1'b1;
+				exp.control_signals.funct3 = tr.funct3;
+				exp.control_signals.rs1_id = tr.rs1;
+
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_ADD;
 					3'b011:exp.control_signals.alu_op = ALU_SLTU;
@@ -126,6 +130,9 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.alu_src   = 1'b1;
 				exp.control_signals.mem_read  = 1'b1;
 				exp.control_signals.mem_to_reg= 1'b1;
+				exp.control_signals.funct3 = tr.funct3;
+				exp.control_signals.rs1_id = tr.rs1;
+
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_ADD;
 					3'b001:exp.control_signals.alu_op = ALU_ADD;
@@ -140,6 +147,9 @@ class id_ref_model extends uvm_component;
 				exp.immediate_data = { {19{tr[31]}}, tr[31], tr[7], tr[30:25], tr[11:8], 1'b0 };
 				exp.control_signals.encoding = B_TYPE;
 				exp.control_signals.is_branch = 1'b1;
+				exp.control_signals.funct3 = tr.funct3;
+				exp.control_signals.rs1_id = tr.rs1;
+				exp.control_signals.rs2_id = tr.rs2;
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_SUB;
 					3'b001:exp.control_signals.alu_op = ALU_SUB;
@@ -163,12 +173,17 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.encoding = I_TYPE;
 				exp.control_signals.is_jumpr = 1'b1;
 				exp.control_signals.reg_write = 1'b1;
+				exp.control_signals.funct3 = tr.funct3;
+				exp.control_signals.rs1_id = tr.rs1;
 			end
 			7'b0100011:begin //S-type store
 				exp.immediate_data = { {20{tr[31]}}, tr[31:25], tr[11:7] };
 				exp.control_signals.encoding = S_TYPE;
 				exp.control_signals.mem_write = 1'b1;
 				exp.control_signals.alu_src = 1'b1;
+				exp.control_signals.funct3 = tr.funct3;
+				exp.control_signals.rs1_id = tr.rs1;
+				exp.control_signals.rs2_id = tr.rs2;
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_ADD;
 					3'b001:exp.control_signals.alu_op = ALU_ADD;

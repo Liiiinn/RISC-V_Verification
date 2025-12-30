@@ -58,9 +58,7 @@ class id_seq_item extends uvm_sequence_item;
         branch_in.branch_btb_hit == 0;
         branch_in.branch_btb_addr == 0;
     }
-   constraint reg_id_constraint {
-    reg_id inside {[1:31]};
-  }
+
    constraint instruction_constraints{
         //Instr_R_type instruction constraints
         (my_instr == Instr_R_type)-> {

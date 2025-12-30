@@ -33,6 +33,8 @@ class tb_env extends uvm_env;
     // reference model
     id_ref_model    m_id_ref_model;
 
+    uvm_event end_of_stimulus_ev;
+
     //------------------------------------------------------------------------------
     // Creates and initializes an instance of this class using the normal
     // constructor arguments for uvm_component.
@@ -64,8 +66,10 @@ class tb_env extends uvm_env;
         m_id_scoreboard = id_scoreboard::type_id::create("m_id_scoreboard",this);
         // Build reference model
         m_id_ref_model = id_ref_model::type_id::create("m_id_ref_model", this);
+        end_of_stimulus_ev = new("end_of_stimulus_ev");
+        uvm_config_db#(uvm_event)::set(this, "m_id_scoreboard","end_of_stimulus_ev", end_of_stimulus_ev);
     endfunction : build_phase
-
+   
     //------------------------------------------------------------------------------
     // This function is used to connection the uVC monitor analysis ports to the scoreboard
     //------------------------------------------------------------------------------
@@ -80,5 +84,18 @@ class tb_env extends uvm_env;
         // Connect id_agent monitor to reference model
         m_id_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.analysis_imp);
     endfunction : connect_phase
+
+    virtual task run_phase(uvm_phase phase);
+        phase.raise_objection(this);
+        `uvm_info(get_name(), "tb_env run_phase started", UVM_MEDIUM);
+        // 等待 test / sequence 结束
+        phase.wait_for_state(UVM_PHASE_READY_TO_END);
+        `uvm_info(get_name(), "All stimulus finished, triggering end_of_stimulus_ev", UVM_MEDIUM);
+        end_of_stimulus_ev.trigger();
+        // 等 scoreboard drain 队列
+        repeat (5) @(posedge m_top_config.m_clk_config.m_if.clk);
+        phase.drop_objection(this);
+    endtask
+
 
 endclass : tb_env

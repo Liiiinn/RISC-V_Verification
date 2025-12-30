@@ -48,7 +48,7 @@ class id_scoreboard extends uvm_component;
     control_type control_signals;
     bit branch_out;
     bit [31:0] pc_out;
-
+    uvm_event end_of_stimulus_ev;
 
 
     covergroup id_rstn_covergroup;
@@ -227,9 +227,14 @@ class id_scoreboard extends uvm_component;
 
         if (!uvm_config_db#(clk_config)::get(this, "", "config", m_clk_config))
             `uvm_fatal("NOCONFIG", "No clk_config found for scoreboard");
+        
         vif = m_clk_config.m_if;
         if (vif == null) 
             `uvm_fatal("NOVIF", "Scoreboard: vif is NULL!");
+        
+        if (!uvm_config_db#(uvm_event)::get(this, "", "end_of_stimulus_ev", end_of_stimulus_ev)) begin
+            `uvm_fatal("NOEVENT", "Scoreboard: end_of_stimulus_ev not set ");
+        end
     endfunction
 
     function void connect_phase(uvm_phase phase);
@@ -390,6 +395,11 @@ class id_scoreboard extends uvm_component;
                 end
             end
             else begin
+                // // exit condition
+                // if($root.uvm_test_top.phase_done) begin
+                //     `uvm_info(get_name(), "Scoreboard comparison task ending as phase is done", UVM_MEDIUM);
+                //     break;
+                // end
                 // 如果任一队列为空，等一个时钟再继续检查
                 @(posedge vif.clk);
             end
@@ -398,11 +408,13 @@ class id_scoreboard extends uvm_component;
 
 
     virtual task run_phase(uvm_phase phase);
-        phase.raise_objection(this);
-        fork
+      phase.raise_objection(this);
+        `uvm_info(get_name(), "Scoreboard starting comparison task", UVM_MEDIUM)
+         fork 
             compare();
-        join_none
-        phase.drop_objection(this);
+         join
+    
+      phase.drop_objection(this);
     endtask
     
     virtual function void check_phase(uvm_phase phase);
