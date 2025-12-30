@@ -408,13 +408,10 @@ class id_scoreboard extends uvm_component;
 
 
     virtual task run_phase(uvm_phase phase);
-      phase.raise_objection(this);
         `uvm_info(get_name(), "Scoreboard starting comparison task", UVM_MEDIUM)
-         fork 
+        fork 
             compare();
-         join
-    
-      phase.drop_objection(this);
+        join_none  // Launch in background, don't wait
     endtask
     
     virtual function void check_phase(uvm_phase phase);

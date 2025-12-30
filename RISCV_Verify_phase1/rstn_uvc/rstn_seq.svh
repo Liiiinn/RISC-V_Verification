@@ -27,7 +27,7 @@ class rstn_seq extends uvm_sequence #(rstn_seq_item);
 		})) `uvm_fatal(get_name(), "Failed to randomize rstn_seq_item");
 
 		finish_item(req);
-		get_response(rsp,req.get_transaction_id());
+		// get_response(rsp,req.get_transaction_id());  // Not needed for reset sequence
 
 	endtask: body
 
