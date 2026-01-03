@@ -15,6 +15,7 @@ class id_scoreboard extends uvm_component;
     uvm_analysis_imp_scoreboard_act_id_out #(id_out_seq_item,id_scoreboard) m_act_id_out_ap;  // from DUT monitor
 
     virtual clk_if vif;
+    id_seq_item input_history_q[$];
     clk_config m_clk_config;
     
     // Queues to store transactions
@@ -256,6 +257,8 @@ class id_scoreboard extends uvm_component;
         `uvm_info(get_name(), $sformatf("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
         act_in_q.push_back(t);
 
+        input_history_q.push_back(t);
+
         // ===== 采样输入覆盖 =====
         opcode      = t.instruction.opcode;
         funct3      = t.instruction.funct3;
@@ -458,6 +461,21 @@ class id_scoreboard extends uvm_component;
                 id_out_seq_item exp_item = exp_out_q.pop_front();
                 id_out_seq_item act_item = act_out_q.pop_front();
 
+                id_seq_item input_item;
+                logic [31:0] instruction_32bit;
+                if (input_history_q.size() > 0) begin
+                    input_item = input_history_q.pop_front();
+                    // 重建 32-bit 指令
+                    instruction_32bit = {
+                        input_item.instruction.funct7,
+                        input_item.instruction.rs2,
+                        input_item.instruction.rs1,
+                        input_item.instruction.funct3,
+                        input_item.instruction.rd,
+                        input_item.instruction.opcode
+                    };
+                end
+
                 // ---- pass-through signals ----
                 if (act_item.pc_out !== exp_item.pc_out) begin
                     `uvm_error(get_name(),
@@ -523,8 +541,8 @@ class id_scoreboard extends uvm_component;
                 
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
-                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p",
-                                exp_item.control_signals, act_item.control_signals));
+                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n instruction: 0x%0b",
+                                exp_item.control_signals, act_item.control_signals,instruction_32bit));
                 end
 
                 // immediate
