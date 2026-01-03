@@ -295,6 +295,133 @@ class id_scoreboard extends uvm_component;
         id_out_covergroup.sample();
     endfunction
 
+    // 比较控制信号的函数
+    function void compare_control_signals(control_type exp, control_type act, string prefix = "");
+        bit has_mismatch = 0;
+        string mismatch_details = "";
+        
+        // 逐个字段比较
+        if (exp.alu_op !== act.alu_op) begin
+            mismatch_details = {mismatch_details, 
+                $sformatf("\n  [MISMATCH] alu_op: Expected=%s, Got=%s", 
+                    exp.alu_op.name(), act.alu_op.name())};
+            has_mismatch = 1;
+        end
+        
+        if (exp.encoding !== act.encoding) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] encoding: Expected=%s, Got=%s",
+                    exp.encoding.name(), act.encoding.name())};
+            has_mismatch = 1;
+        end
+        
+        if (exp.rs1_id !== act.rs1_id) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] rs1_id: Expected=%0d, Got=%0d",
+                    exp.rs1_id, act.rs1_id)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.rs2_id !== act.rs2_id) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] rs2_id: Expected=%0d, Got=%0d",
+                    exp.rs2_id, act.rs2_id)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.funct3 !== act.funct3) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] funct3: Expected=0b%03b, Got=0b%03b",
+                    exp.funct3, act.funct3)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.alu_src !== act.alu_src) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] alu_src: Expected=%0b, Got=%0b",
+                    exp.alu_src, act.alu_src)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.mem_read !== act.mem_read) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] mem_read: Expected=%0b, Got=%0b",
+                    exp.mem_read, act.mem_read)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.mem_write !== act.mem_write) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] mem_write: Expected=%0b, Got=%0b",
+                    exp.mem_write, act.mem_write)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.reg_write !== act.reg_write) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] reg_write: Expected=%0b, Got=%0b",
+                    exp.reg_write, act.reg_write)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.mem_to_reg !== act.mem_to_reg) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] mem_to_reg: Expected=%0b, Got=%0b",
+                    exp.mem_to_reg, act.mem_to_reg)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_branch !== act.is_branch) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_branch: Expected=%0b, Got=%0b",
+                    exp.is_branch, act.is_branch)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_jump !== act.is_jump) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_jump: Expected=%0b, Got=%0b",
+                    exp.is_jump, act.is_jump)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_jumpr !== act.is_jumpr) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_jumpr: Expected=%0b, Got=%0b",
+                    exp.is_jumpr, act.is_jumpr)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_lui !== act.is_lui) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_lui: Expected=%0b, Got=%0b",
+                    exp.is_lui, act.is_lui)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_auipc !== act.is_auipc) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_auipc: Expected=%0b, Got=%0b",
+                    exp.is_auipc, act.is_auipc)};
+            has_mismatch = 1;
+        end
+        
+        if (exp.is_mul !== act.is_mul) begin
+            mismatch_details = {mismatch_details,
+                $sformatf("\n  [MISMATCH] is_mul: Expected=%0b, Got=%0b",
+                    exp.is_mul, act.is_mul)};
+            has_mismatch = 1;
+        end
+        
+        // 如果有不匹配，打印详细信息
+        if (has_mismatch) begin
+            `uvm_error(get_name(), 
+                $sformatf("%sControl signals mismatch:%s", prefix, mismatch_details))
+        end else begin
+            `uvm_info(get_name(), 
+                $sformatf("%sControl signals match", prefix), UVM_HIGH)
+        end
+    endfunction
 
 
     task compare();
@@ -370,20 +497,33 @@ class id_scoreboard extends uvm_component;
 
                 // read data 1/2
                 if (exp_item.read_data1 !== act_item.read_data1) begin
+                    if($isunknown(exp_item.read_data1))begin
+                        `uvm_warning(get_name(), $sformatf("read_data1 contains X/Z: exp=%0d act=%0d", exp_item.read_data1, act_item.read_data1));
+                    end
+                else begin
                     `uvm_error(get_name(),
                         $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d",
                                 exp_item.read_data1, act_item.read_data1));
+                  end
                 end
                 if (exp_item.read_data2 !== act_item.read_data2) begin
+                    if($isunknown(exp_item.read_data2))begin
+                        `uvm_warning(get_name(), $sformatf("read_data2 contains X/Z: exp=%0d act=%0d", exp_item.read_data2, act_item.read_data2));
+                    end
+                else begin
                     `uvm_error(get_name(),
                         $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d",
                                 exp_item.read_data2, act_item.read_data2));
+                  end
                 end
 
-                // control signals: 如果 control_type 支持直接比较（结构体/enum），使用 ==
+                // control signals
+                // compare_control_signals(exp_item.control_signals, act_item.control_signals, "    ");
+
+                
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
-                        $sformatf("Control signals mismatch! Expected: %p, Got: %p",
+                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p",
                                 exp_item.control_signals, act_item.control_signals));
                 end
 

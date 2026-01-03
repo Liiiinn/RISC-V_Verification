@@ -29,6 +29,7 @@ class id_ref_model extends uvm_component;
 		logic[2:0] funct3 = tr.funct3;
 		logic[6:0] funct7 = tr.funct7;	
 		
+		instr_bits = {tr.funct7, tr.rs2, tr.rs1, tr.funct3, tr.rd, tr.opcode}
 	    // Initialize all fields to zero
 		exp.read_data1 = 0;
 		exp.read_data2 = 0;
@@ -109,6 +110,7 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.alu_src = 1'b1;
 				exp.control_signals.funct3 = tr.funct3;
 				exp.control_signals.rs1_id = tr.rs1;
+				exp.control_signals.rs2_id = instr_bits[24:20];
 
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_ADD;
@@ -132,6 +134,7 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.mem_to_reg= 1'b1;
 				exp.control_signals.funct3 = tr.funct3;
 				exp.control_signals.rs1_id = tr.rs1;
+				exp.control_signals.rs2_id = instr_bits[24:20];
 
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_ADD;
@@ -149,7 +152,7 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.is_branch = 1'b1;
 				exp.control_signals.funct3 = tr.funct3;
 				exp.control_signals.rs1_id = tr.rs1;
-				exp.control_signals.rs2_id = tr.rs2;
+				exp.control_signals.rs2_id = instr_bits[24:20];
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_SUB;
 					3'b001:exp.control_signals.alu_op = ALU_SUB;
@@ -166,6 +169,8 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.encoding = J_TYPE;
 				exp.control_signals.is_jump = 1'b1;
 				exp.control_signals.reg_write = 1'b1;
+				exp.control_signals.rs1_id = instr_bits[19:15];
+                exp.control_signals.rs2_id = instr_bits[24:20];
 			end
 			7'b1100111:begin //I-type jalr
 				exp.immediate_data = { {20{tr[31]}}, tr[31:20] };
@@ -197,6 +202,8 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.reg_write = 1'b1;
 				exp.control_signals.alu_src = 1'b1;
 				exp.control_signals.is_lui = 1'b1;
+				exp.control_signals.rs1_id = instr_bits[19:15];
+    			exp.control_signals.rs2_id = instr_bits[24:20];
 			end
 
 			7'b0010111:begin //U-type auipc'
@@ -206,6 +213,8 @@ class id_ref_model extends uvm_component;
 				exp.control_signals.reg_write = 1'b1;
 				exp.control_signals.alu_src = 1'b1;
 				exp.control_signals.is_auipc = 1'b1;
+				exp.control_signals.rs1_id = instr_bits[19:15];
+				exp.control_signals.rs2_id = instr_bits[24:20];
 			end
 		endcase
 

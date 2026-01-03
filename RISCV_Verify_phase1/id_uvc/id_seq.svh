@@ -60,16 +60,18 @@ class id_seq_random_sequence extends id_seq_base_sequence;
         id_seq_item req;
         //? repeat or not?
         repeat (num_transactions) begin
-            req = id_seq_item::type_id::create("req");
+             if (!this.randomize()) begin
+              `uvm_fatal(get_name(), "Sequence randomization failed")
+            end
 
+            req = id_seq_item::type_id::create("req");
             start_item(req);
-            if (!req.randomize() with{
-                req.pc == local::pc;
-                req.instruction == local::instruction;
-                req.write_en == local::write_en;
-                req.write_data == local::write_data;
-                req.branch_in == local::branch_in;
-            }) `uvm_fatal(get_name(), "Randomization failed");
+            req.pc = this.pc;
+            req.instruction = this.instruction;
+            req.write_en = this.write_en;
+            req.write_data = this.write_data;
+            req.branch_in = this.branch_in;
+
             finish_item(req);
             //  get_response(rsp, req.get_transaction_id());
 
