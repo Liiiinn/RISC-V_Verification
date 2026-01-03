@@ -32,8 +32,9 @@ class id_seq_item extends uvm_sequence_item;
     randc logic [31:0] write_data;
     rand branch_predict_type branch_in;
     rand logic [31:0] pc;
+    
     randc logic [4:0] reg_id;
-    randc logic [2:0] funct3;
+    // randc logic [2:0] funct3;
     randc logic [6:0] funct7;
     randc logic [19:0] imm_20bit;
     randc instr_type my_instr;
@@ -63,7 +64,7 @@ class id_seq_item extends uvm_sequence_item;
         //Instr_R_type instruction constraints
         (my_instr == Instr_R_type)-> {
             instruction.opcode == 7'b0110011;
-            instruction.funct3 == funct3;
+            instruction.funct3 inside {[0:7]};
             instruction.funct7 inside {7'b0000000, 7'b0100000};
             instruction.rd == reg_id;
             instruction.rs1 == reg_id;
@@ -78,7 +79,7 @@ class id_seq_item extends uvm_sequence_item;
         //Instr_I_type instruction constraints
         (my_instr == Instr_I_type)-> {
             instruction.opcode == 7'b0010011;
-            instruction.funct3 == funct3;
+            instruction.funct3 inside {[0:7]};
             instruction.rd == reg_id;
             instruction.rs1 == reg_id;
             if(instruction.funct3 == 3'b101) {
