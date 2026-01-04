@@ -12,7 +12,6 @@ class id_out_seq_item extends uvm_sequence_item;
     
     // ID阶段输出信号（只有输出，没有rand）
     branch_predict_type branch_out;
-    // logic branch_out;
     logic [4:0] reg_rd_id;
     logic [31:0] pc_out;
     logic [31:0] read_data1;

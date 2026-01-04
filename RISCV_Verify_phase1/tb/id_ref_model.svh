@@ -157,10 +157,10 @@ class id_ref_model extends uvm_component;
 				case(funct3)
 					3'b000:exp.control_signals.alu_op = ALU_SUB;
 					3'b001:exp.control_signals.alu_op = ALU_SUB;
-					3'b010:exp.control_signals.alu_op = ALU_SUB;
-					3'b011:exp.control_signals.alu_op = ALU_SUB;
 					3'b100:exp.control_signals.alu_op = ALU_SUB;
 					3'b101:exp.control_signals.alu_op = ALU_SUB;
+					3'b110:exp.control_signals.alu_op = ALU_SUB;
+					3'b111:exp.control_signals.alu_op = ALU_SUB;
 					default : exp.control_signals.alu_op = ALU_SUB; 
 				endcase
 			end

@@ -284,7 +284,7 @@ class id_scoreboard extends uvm_component;
     // receive actual transaction from  DUT monitor
     function void write_scoreboard_act_id_out(id_out_seq_item t);
         `uvm_info(get_name(), $sformatf("Received actual transaction: \n%s", t.sprint()), UVM_HIGH);
-         act_out_q.push_back(t);
+        act_out_q.push_back(t);
 
         // ===== 采样输出覆盖 =====
         reg_rd_id      = t.reg_rd_id;
@@ -541,8 +541,8 @@ class id_scoreboard extends uvm_component;
                 
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
-                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n instruction: 0x%0b",
-                                exp_item.control_signals, act_item.control_signals,instruction_32bit));
+                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n instruction: 0x%0b, \n Expected funct3: 0x%0b, Got funct3: 0x%0b",
+                                exp_item.control_signals, act_item.control_signals,instruction_32bit[31:25], exp_item.control_signals.funct3, act_item.control_signals.funct3));
                 end
 
                 // immediate
