@@ -53,7 +53,7 @@ class id_seq_item extends uvm_sequence_item;
 
     constraint writeback_c {
         write_en dist {0 := 3, 1 := 1};
-        write_id inside {[1:31]};
+        write_id inside {[0:31]};
     }
 
     constraint branch_in_c {
@@ -97,6 +97,16 @@ class id_seq_item extends uvm_sequence_item;
         (my_instr == Instr_I_L_type) -> {
             instruction.opcode == 7'b0000011;
             instruction.funct3 inside {3'b000,3'b001,3'b010};
+            instruction.rd  == write_id;
+            instruction.rs1 == reg_id;
+            instruction[31:20] == imm_20bit[11:0];
+            write_en == 1;
+        }
+
+        // I-type JALR
+        (my_instr == Instr_I_J_type) -> {
+            instruction.opcode == 7'b1100111;
+            instruction.funct3 == 3'b000;
             instruction.rd  == write_id;
             instruction.rs1 == reg_id;
             instruction[31:20] == imm_20bit[11:0];
