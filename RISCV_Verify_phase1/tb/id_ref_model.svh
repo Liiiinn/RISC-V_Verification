@@ -15,6 +15,13 @@ class id_ref_model extends uvm_component;
 		id_ref_ap = new("id_ref_ap", this);
 	endfunction
 
+	function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        
+        reg_file = '{default: 32'h0};
+        `uvm_info(get_name(), "Register file initialized to zero", UVM_MEDIUM)
+    endfunction
+
 	function void write(id_seq_item item);
 	  	id_out_seq_item exp = id_out_seq_item::type_id::create("exp");
 	  	// exp.instr = item.instr;

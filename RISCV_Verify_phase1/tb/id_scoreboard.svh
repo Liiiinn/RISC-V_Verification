@@ -483,7 +483,7 @@ class id_scoreboard extends uvm_component;
                                 exp_item.pc_out, act_item.pc_out));
                 end
                 else begin
-                    `uvm_info(get_name(), $sformatf("PC passthrough OK: 0x%0h", act_item.pc_out), UVM_LOW);
+                    `uvm_info(get_name(), $sformatf("PC passthrough OK"), UVM_LOW);
                 end
 
                 if (act_item.branch_out !== exp_item.branch_out) begin
@@ -492,7 +492,7 @@ class id_scoreboard extends uvm_component;
                                 exp_item.branch_out, act_item.branch_out));
                 end
                 else begin
-                    `uvm_info(get_name(), $sformatf("branch passthrough OK: %0b", act_item.branch_out), UVM_LOW);
+                    `uvm_info(get_name(), $sformatf("branch passthrough OK"), UVM_LOW);
                 end
 
                 // ---- main decode outputs comparison ----
@@ -516,7 +516,8 @@ class id_scoreboard extends uvm_component;
                 // read data 1/2
                 if (exp_item.read_data1 !== act_item.read_data1) begin
                     if($isunknown(exp_item.read_data1))begin
-                        `uvm_warning(get_name(), $sformatf("read_data1 contains X/Z: exp=%0d act=%0d", exp_item.read_data1, act_item.read_data1));
+                        `uvm_error(get_name(), $sformatf("read_data1 contains X/Z: exp=%0d act=%0d", 
+                                exp_item.read_data1, act_item.read_data1));
                     end
                 else begin
                     `uvm_error(get_name(),
@@ -526,7 +527,8 @@ class id_scoreboard extends uvm_component;
                 end
                 if (exp_item.read_data2 !== act_item.read_data2) begin
                     if($isunknown(exp_item.read_data2))begin
-                        `uvm_warning(get_name(), $sformatf("read_data2 contains X/Z: exp=%0d act=%0d", exp_item.read_data2, act_item.read_data2));
+                        `uvm_error(get_name(), $sformatf("read_data2 contains X/Z: exp=%0d act=%0d", 
+                                exp_item.read_data2, act_item.read_data2));
                     end
                 else begin
                     `uvm_error(get_name(),
@@ -541,8 +543,8 @@ class id_scoreboard extends uvm_component;
                 
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
-                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n instruction: 0x%0b, \n Expected funct3: 0x%0b, Got funct3: 0x%0b",
-                                exp_item.control_signals, act_item.control_signals,instruction_32bit[31:25], exp_item.control_signals.funct3, act_item.control_signals.funct3));
+                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p",
+                                exp_item.control_signals, act_item.control_signals));
                 end
 
                 // immediate
