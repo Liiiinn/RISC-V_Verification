@@ -20,9 +20,8 @@ class id_ref_model extends uvm_component;
 	  	// exp.instr = item.instr;
 	  	decode_instr(exp, item); // decode;
 	  	id_ref_ap.write(exp);
-	endfunction 
+	endfunction
 
-	// 可能的bug：exp还有遗漏未赋值的字段
 	function void decode_instr(id_out_seq_item exp, id_seq_item item); // Input a handle so exp can be modified
 		instruction_type tr = item.instruction;
 		logic[6:0] opcode = tr.opcode;
@@ -223,10 +222,27 @@ class id_ref_model extends uvm_component;
 			end
 		endcase
 
-		// Read register file
-		exp.read_data1 = (tr.rs1 == 0) ? 0 : reg_file[tr.rs1];
-        exp.read_data2 = (tr.rs2 == 0) ? 0 : reg_file[tr.rs2];
-        
+		// Read register file with writeback bypass
+		if (tr.rs1 == 0) begin
+			exp.read_data1 = 32'b0;
+		end 
+		else if (item.write_en && (tr.rs1 == item.write_id)) begin
+			exp.read_data1 = item.write_data;
+		end 
+		else begin
+			exp.read_data1 = reg_file[tr.rs1];
+		end
+
+        if (tr.rs2 == 0) begin
+			exp.read_data2 = 32'b0;
+		end 
+		else if (item.write_en && (tr.rs2 == item.write_id)) begin
+			exp.read_data2 = item.write_data;
+		end 
+		else begin
+			exp.read_data2 = reg_file[tr.rs2];
+		end
+
         // Write back to register file
         if (item.write_en && item.write_id != 0) begin
             reg_file[item.write_id] = item.write_data;
