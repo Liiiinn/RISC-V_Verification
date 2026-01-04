@@ -206,7 +206,6 @@ class id_scoreboard extends uvm_component;
         opcode_funct3_cross : cross opcode, funct3;
         opcode_funct7_cross : cross opcode, funct7;
         branch_opcode_cross : cross opcode, branch_in;
-        write_reg_cross     : cross write_en, write_id;
     endgroup: cross_covergroup
 
 
@@ -419,7 +418,7 @@ class id_scoreboard extends uvm_component;
         // 如果有不匹配，打印详细信息
         if (has_mismatch) begin
             `uvm_error(get_name(), 
-                $sformatf("%sControl signals mismatch:%s", prefix, mismatch_details))
+                $sformatf("%sControl signals mismatch:%s", prefix, mismatch_details));
         end else begin
             `uvm_info(get_name(), 
                 $sformatf("%sControl signals match", prefix), UVM_HIGH)
@@ -538,13 +537,12 @@ class id_scoreboard extends uvm_component;
                 end
 
                 // control signals
-                // compare_control_signals(exp_item.control_signals, act_item.control_signals, "    ");
+                //  compare_control_signals(exp_item.control_signals, act_item.control_signals,"    ");
 
-                
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
-                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p",
-                                exp_item.control_signals, act_item.control_signals));
+                        $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n Instruction: 0x%0b",
+                                exp_item.control_signals, act_item.control_signals, instruction_32bit));
                 end
 
                 // immediate

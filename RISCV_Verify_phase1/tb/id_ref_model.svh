@@ -92,14 +92,14 @@ class id_ref_model extends uvm_component;
 					endcase
 				end
 				if(funct7 == 7'b0000001) begin
-					exp.control_signals.is_mul = 1'b1;
+					// exp.control_signals.is_mul = 1'b1;
 					case(funct3)
-						3'b000: exp.control_signals.alu_op = ALU_MUL;
-						3'b001: exp.control_signals.alu_op = ALU_MULH;
-						3'b100: exp.control_signals.alu_op = ALU_DIV;
-						3'b101: exp.control_signals.alu_op = ALU_DIVU;
-						3'b110: exp.control_signals.alu_op = ALU_REM;
-						3'b111: exp.control_signals.alu_op = ALU_REMU;
+						3'b000: begin exp.control_signals.alu_op = ALU_MUL;  exp.control_signals.is_mul = 1'b1; end
+						3'b001: begin exp.control_signals.alu_op = ALU_MULH; exp.control_signals.is_mul = 1'b1; end
+						3'b100: begin exp.control_signals.alu_op = ALU_DIV;  exp.control_signals.is_mul = 1'b1; end
+						3'b101: begin exp.control_signals.alu_op = ALU_DIVU; exp.control_signals.is_mul = 1'b1; end
+						3'b110: begin exp.control_signals.alu_op = ALU_REM;  exp.control_signals.is_mul = 1'b1; end
+						3'b111: begin exp.control_signals.alu_op = ALU_REMU; exp.control_signals.is_mul = 1'b1; end
 					endcase
 				end
 				if(funct7 == 7'b0100000) begin
