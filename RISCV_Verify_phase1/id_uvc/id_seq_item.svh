@@ -76,7 +76,7 @@ class id_seq_item extends uvm_sequence_item;
         (my_instr == Instr_R_type) -> {
             instruction.opcode == 7'b0110011;
             instruction.funct3 inside {[0:7]};
-            instruction.funct7 inside {7'b0000000, 7'b0100000};
+            instruction.funct7 inside {7'b0000000, 7'b0100000, 7'b0000001};
             instruction.rd  == write_id;
             instruction.rs1 == reg_id;
             instruction.rs2 == reg_id;
