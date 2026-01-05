@@ -42,7 +42,8 @@ class id_seq_item extends uvm_sequence_item;
             Instr_S_type   := 15,
             Instr_B_type   := 15,
             Instr_U_type   := 5,
-            Instr_J_type   := 5
+            Instr_J_type   := 5,
+            Instr_I_J_type := 5
         };
     }
 
