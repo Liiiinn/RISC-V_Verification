@@ -202,10 +202,43 @@ class id_scoreboard extends uvm_component;
     endgroup: id_out_covergroup
 
     covergroup cross_covergroup;
+        option.per_instance = 1;
+        opcode_cp :coverpoint opcode {
+            bins JALR = {7'b1100111};
+            bins JAL = {7'b1101111};
+            bins branch = {7'b1100011};
+            bins other = default;
+        }
+        jumpr_cp :coverpoint control_signals.is_jumpr{
+            bins is_jumpr_0 = {0};
+            bins is_jumpr_1 = {1};
+        }
+        jump_cp :coverpoint control_signals.is_jump{
+            bins is_jump_0 = {0};
+            bins is_jump_1 = {1};
+        }
+        branch_cp :coverpoint control_signals.is_branch{
+            bins is_branch_0 = {0};
+            bins is_branch_1 = {1};
+        }
+
+        opcode_jumpr_cross : cross opcode_cp,jumpr_cp{
+            bins jalr_correct = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_1);
+            illegal_bins jalr_wrong = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_0);
+        }
+        opcode_jump_cross  : cross opcode_cp,jump_cp{
+            bins jal_correct = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_1);
+            illegal_bins jal_wrong = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_0);
+        }
+        opcode_branch_cross: cross opcode_cp,branch_cp{
+            bins branch_correct = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_1);
+            illegal_bins branch_wrong = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_0);
+        }
+
         write_cross         : cross write_en, write_id;
-        opcode_funct3_cross : cross opcode, funct3;
-        opcode_funct7_cross : cross opcode, funct7;
-        branch_opcode_cross : cross opcode, branch_in;
+        // opcode_funct3_cross : cross opcode, funct3;
+        // opcode_funct7_cross : cross opcode, funct7;
+
     endgroup: cross_covergroup
 
 
@@ -295,6 +328,7 @@ class id_scoreboard extends uvm_component;
         pc_out         = t.pc_out;
 
         id_out_covergroup.sample();
+
     endfunction
 
     // 比较控制信号的函数
@@ -435,6 +469,7 @@ class id_scoreboard extends uvm_component;
                 rstn_seq_item r_item = rstn_q.pop_front();
                 if (r_item.rstn_value == 1'b0) begin
                     // 在 reset 期间清空所有队列，避免过时事务导致误报
+                    input_history_q.delete();
                     exp_out_q.delete();
                     act_out_q.delete();
                     act_in_q.delete();
@@ -447,6 +482,7 @@ class id_scoreboard extends uvm_component;
                 `uvm_info(get_name(), $sformatf("Reset deasserted (value=%0b)", r_item.rstn_value), UVM_LOW);
             end
 
+
             // 2) 队列长度异常报警（帮助 debug 不匹配）
             if (exp_out_q.size() > QUEUE_WARN_DEPTH) begin
                 `uvm_warning(get_name(), $sformatf("exp_out_q very deep: %0d", exp_out_q.size()));
@@ -456,24 +492,34 @@ class id_scoreboard extends uvm_component;
             end
 
             // 3) 当两侧都有输出可比时，逐对比 FIFO（基本假设：ref 与 DUT 输出顺序一致）
-            if (exp_out_q.size() > 0 && act_out_q.size() > 0) begin
-                id_out_seq_item exp_item = exp_out_q.pop_front();
-                id_out_seq_item act_item = act_out_q.pop_front();
-
-                id_seq_item input_item;
+            if (exp_out_q.size() > 0 && act_out_q.size() > 0 && input_history_q.size() > 0) begin
+                id_seq_item  in;
+                id_out_seq_item exp_item;
+                id_out_seq_item act_item;
+                
                 logic [31:0] instruction_32bit;
-                if (input_history_q.size() > 0) begin
-                    input_item = input_history_q.pop_front();
-                    // 重建 32-bit 指令
-                    instruction_32bit = {
-                        input_item.instruction.funct7,
-                        input_item.instruction.rs2,
-                        input_item.instruction.rs1,
-                        input_item.instruction.funct3,
-                        input_item.instruction.rd,
-                        input_item.instruction.opcode
-                    };
-                end
+
+                exp_item = exp_out_q.pop_front();
+                act_item = act_out_q.pop_front();
+                in = input_history_q.pop_front();
+
+                opcode     = in.instruction.opcode;
+                funct3     = in.instruction.funct3;
+                funct7     = in.instruction.funct7;
+                write_en   = in.write_en;
+                write_id   = in.write_id;
+                branch_in  = in.branch_in;
+                control_signals = act_item.control_signals;
+                cross_covergroup.sample();
+           
+                instruction_32bit = {
+                        in.instruction.funct7,
+                        in.instruction.rs2,
+                        in.instruction.rs1,
+                        in.instruction.funct3,
+                        in.instruction.rd,
+                        in.instruction.opcode
+                };
 
                 // ---- pass-through signals ----
                 if (act_item.pc_out !== exp_item.pc_out) begin
@@ -552,6 +598,7 @@ class id_scoreboard extends uvm_component;
                                 exp_item.immediate_data, act_item.immediate_data));
                 end
             end
+
             else begin
                 // // exit condition
                 // if($root.uvm_test_top.phase_done) begin
