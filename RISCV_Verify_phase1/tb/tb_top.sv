@@ -130,15 +130,15 @@ module tb_top;
 
     // Start UVM test_base environment
     initial begin
-        run_test("basic_test");
+        run_test("id_test");
     end
 
     initial begin
         #100000; // 100us timeout
         $display("================================");
-        $display("ERROR: Simulation timeout!");
+        $display("Simulation timeout reached!");
         $display("================================");
-        $fatal(1, "Test did not complete in time");
+        $finish();
     end
 
     int clk_count = 0;

@@ -72,7 +72,7 @@ class base_test extends uvm_test;
         phase.raise_objection(this);
         
         fork
-             begin
+            begin
                 // Reset DUT before start
                 rstn = rstn_seq::type_id::create("rstn");
                 if (!(rstn.randomize() with {
@@ -93,7 +93,7 @@ class base_test extends uvm_test;
                 end
                 `uvm_info(get_name(),"All sequences sent", UVM_LOW)
                 #100ns;
-             end
+            end
 
             begin
                 #100us;
