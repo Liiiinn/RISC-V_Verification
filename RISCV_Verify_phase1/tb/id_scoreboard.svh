@@ -68,7 +68,7 @@ class id_scoreboard extends uvm_component;
             // Idea: 可能还需要考虑特殊数据
             bins data_0 = {0};
             bins data_pos = {[1:$]};
-            bins data_neg = {[-2147483648:-1]};
+            bins data_neg = {[32'h80000000:32'hBFFFFFFF]}; // -2147483648 to -1
         }
         write_id_cp : coverpoint write_id{
             bins id_0 = {0};
@@ -120,7 +120,7 @@ class id_scoreboard extends uvm_component;
             // Idea: 可能还需要考虑mul和div的溢出
             bins imm_0 = {0};
             bins imm_pos = {[1:$]};
-            bins imm_neg = {[-2147483648:-1]};
+            bins imm_neg = {[32'h80000000:32'hBFFFFFFF]}; // -2147483648 to -1
         }
         reg_rd_id_cp : coverpoint reg_rd_id{
             bins rd_0 = {0};
@@ -129,12 +129,12 @@ class id_scoreboard extends uvm_component;
         read_data1_cp : coverpoint read_data1{
             bins data1_0 = {0};
             bins data1_pos = {[1:$]};
-            bins data1_neg = {[-2147483648:-1]};
+            bins data1_neg = {[32'h80000000:32'hBFFFFFFF]};
         }
         read_data2_cp : coverpoint read_data2{
             bins data2_0 = {0};
             bins data2_pos = {[1:$]};
-            bins data2_neg = {[-2147483648:-1]};
+            bins data2_neg = {[32'h80000000:32'hBFFFFFFF]};
         }
         // control signals covergroup
         alu_cp : coverpoint control_signals.alu_op{
@@ -276,13 +276,15 @@ class id_scoreboard extends uvm_component;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if (!uvm_config_db#(clk_config)::get(this, "", "config", m_clk_config))
+        if (!uvm_config_db#(clk_config)::get(this, "", "config", m_clk_config)) begin
             `uvm_fatal("NOCONFIG", "No clk_config found for scoreboard");
+        end
         
         vif = m_clk_config.m_if;
-        if (vif == null) 
+        if (vif == null) begin
             `uvm_fatal("NOVIF", "Scoreboard: vif is NULL!");
-        
+        end
+
         if (!uvm_config_db#(uvm_event)::get(this, "", "end_of_stimulus_ev", end_of_stimulus_ev)) begin
             `uvm_fatal("NOEVENT", "Scoreboard: end_of_stimulus_ev not set ");
         end
@@ -299,6 +301,7 @@ class id_scoreboard extends uvm_component;
 
         // ===== 采样reset覆盖 =====
         reset_n = t.rstn_value;
+
         id_rstn_covergroup.sample();
     endfunction
 
@@ -347,6 +350,8 @@ class id_scoreboard extends uvm_component;
 
         id_out_covergroup.sample();
 
+        // ===== 采样 cross 覆盖 =====
+        cross_covergroup.sample();
     endfunction
 
     // 比较控制信号的函数
@@ -471,7 +476,8 @@ class id_scoreboard extends uvm_component;
         if (has_mismatch) begin
             `uvm_error(get_name(), 
                 $sformatf("%sControl signals mismatch:%s", prefix, mismatch_details));
-        end else begin
+        end
+        else begin
             `uvm_info(get_name(), 
                 $sformatf("%sControl signals match", prefix), UVM_HIGH)
         end
@@ -479,8 +485,8 @@ class id_scoreboard extends uvm_component;
 
 
     task compare();
-        // 运行时常量（可调整）
         localparam int QUEUE_WARN_DEPTH = 256; // 若队列过长，打印警告（方便定位丢包或不同步）
+
         forever begin
             // 1) 先处理 reset 事件（如果 reset 事件进队列，则优先处理）
             if (rstn_q.size() > 0) begin
@@ -500,7 +506,6 @@ class id_scoreboard extends uvm_component;
                 `uvm_info(get_name(), $sformatf("Reset deasserted (value=%0b)", r_item.rstn_value), UVM_LOW);
             end
 
-
             // 2) 队列长度异常报警（帮助 debug 不匹配）
             if (exp_out_q.size() > QUEUE_WARN_DEPTH) begin
                 `uvm_warning(get_name(), $sformatf("exp_out_q very deep: %0d", exp_out_q.size()));
@@ -517,26 +522,26 @@ class id_scoreboard extends uvm_component;
                 
                 logic [31:0] instruction_32bit;
 
+                in = input_history_q.pop_front();
                 exp_item = exp_out_q.pop_front();
                 act_item = act_out_q.pop_front();
-                in = input_history_q.pop_front();
 
-                opcode     = in.instruction.opcode;
-                funct3     = in.instruction.funct3;
-                funct7     = in.instruction.funct7;
-                write_en   = in.write_en;
-                write_id   = in.write_id;
-                branch_in  = in.branch_in;
-                control_signals = act_item.control_signals;
-                cross_covergroup.sample();
+                // opcode     = in.instruction.opcode;
+                // funct3     = in.instruction.funct3;
+                // funct7     = in.instruction.funct7;
+                // write_en   = in.write_en;
+                // write_id   = in.write_id;
+                // branch_in  = in.branch_in;
+
+                // control_signals = act_item.control_signals;
            
                 instruction_32bit = {
-                        in.instruction.funct7,
-                        in.instruction.rs2,
-                        in.instruction.rs1,
-                        in.instruction.funct3,
-                        in.instruction.rd,
-                        in.instruction.opcode
+                    in.instruction.funct7,
+                    in.instruction.rs2,
+                    in.instruction.rs1,
+                    in.instruction.funct3,
+                    in.instruction.rd,
+                    in.instruction.opcode
                 };
 
                 // ---- pass-through signals ----
@@ -558,18 +563,8 @@ class id_scoreboard extends uvm_component;
                     `uvm_info(get_name(), $sformatf("branch passthrough OK"), UVM_LOW);
                 end
 
-                // ---- main decode outputs comparison ----
-                // instruction (如果 id_out 包含 instr 字段)
-                // if ($isunknown(exp_item.instr) || $isunknown(act_item.instr)) begin
-                //     `uvm_warning(get_name(), $sformatf("instr contains X/Z: exp=0x%0h act=0x%0h", exp_item.instr, act_item.instr));
-                // end
-                // if (exp_item.instr !== act_item.instr) begin
-                //     `uvm_error(get_name(),
-                //         $sformatf("Instruction mismatch! Expected: 0x%0h, Got: 0x%0h",
-                //                 exp_item.instr, act_item.instr));
-                // end
-
-                // reg rd id
+                // ---- decoded signals ----
+                // reg_rd_id
                 if (exp_item.reg_rd_id !== act_item.reg_rd_id) begin
                     `uvm_error(get_name(),
                         $sformatf("reg_rd_id mismatch! Expected: %0d, Got: %0d",
@@ -578,36 +573,37 @@ class id_scoreboard extends uvm_component;
 
                 // read data 1/2
                 if (exp_item.read_data1 !== act_item.read_data1) begin
-                    if($isunknown(exp_item.read_data1))begin
+                    if($isunknown(act_item.read_data1))begin
                         `uvm_error(get_name(), $sformatf("read_data1 contains X/Z: exp=%0d act=%0d", 
                                 exp_item.read_data1, act_item.read_data1));
                     end
-                else begin
-                    `uvm_error(get_name(),
-                        $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d",
-                                exp_item.read_data1, act_item.read_data1));
-                  end
+                    else begin
+                        `uvm_error(get_name(),
+                            $sformatf("read_data1 mismatch! Expected: %0d, Got: %0d",
+                                    exp_item.read_data1, act_item.read_data1));
+                    end
                 end
+
                 if (exp_item.read_data2 !== act_item.read_data2) begin
-                    if($isunknown(exp_item.read_data2))begin
+                    if($isunknown(act_item.read_data2))begin
                         `uvm_error(get_name(), $sformatf("read_data2 contains X/Z: exp=%0d act=%0d", 
                                 exp_item.read_data2, act_item.read_data2));
                     end
-                else begin
-                    `uvm_error(get_name(),
-                        $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d",
-                                exp_item.read_data2, act_item.read_data2));
-                  end
+                    else begin
+                        `uvm_error(get_name(),
+                            $sformatf("read_data2 mismatch! Expected: %0d, Got: %0d",
+                                    exp_item.read_data2, act_item.read_data2));
+                    end
                 end
 
                 // control signals
-                //  compare_control_signals(exp_item.control_signals, act_item.control_signals,"    ");
-
                 if (exp_item.control_signals !== act_item.control_signals) begin
                     `uvm_error(get_name(),
                         $sformatf("Control signals mismatch! \n Expected: %p, \n Got: %p, \n Instruction: 0x%0b",
                                 exp_item.control_signals, act_item.control_signals, instruction_32bit));
                 end
+                
+                compare_control_signals(exp_item.control_signals, act_item.control_signals, " "); // 更具体的对比，当上一个对比不成功时启用
 
                 // immediate
                 if (exp_item.immediate_data !== act_item.immediate_data) begin
@@ -616,7 +612,6 @@ class id_scoreboard extends uvm_component;
                                 exp_item.immediate_data, act_item.immediate_data));
                 end
             end
-
             else begin
                 // // exit condition
                 // if($root.uvm_test_top.phase_done) begin

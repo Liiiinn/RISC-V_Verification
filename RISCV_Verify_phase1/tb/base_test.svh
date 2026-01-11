@@ -89,7 +89,7 @@ class base_test extends uvm_test;
 
                 // Runtime resets
                 repeat (no_of_rstn) begin
-                    #( $urandom_range(200, 1000) * 1ns ); // Random wait between resets
+                    repeat ($urandom_range(8, 100)) @(posedge m_top_config.m_clk_config.m_if.clk); // Random wait in clock cycles
 
                     rstn = rstn_seq::type_id::create("rstn_runtime");
                     if (!(rstn.randomize() with {

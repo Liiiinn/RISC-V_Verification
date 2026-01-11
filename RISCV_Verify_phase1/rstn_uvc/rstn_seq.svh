@@ -17,7 +17,6 @@ class rstn_seq extends uvm_sequence #(rstn_seq_item);
 	endfunction :new
 
 	task body();
-
 		req = rstn_seq_item::type_id::create("req");
 		start_item(req);
 
@@ -28,7 +27,6 @@ class rstn_seq extends uvm_sequence #(rstn_seq_item);
 
 		finish_item(req);
 		// get_response(rsp,req.get_transaction_id());  // Not needed for reset sequence
-
 	endtask: body
 
 endclass : rstn_seq
