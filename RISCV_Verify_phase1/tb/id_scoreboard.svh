@@ -206,19 +206,23 @@ class id_scoreboard extends uvm_component;
         option.per_instance = 1;
 
         opcode_jumpr_cross : cross opcode_cp,jumpr_cp{
-            bins jalr_correct = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_1);
-            illegal_bins jalr_wrong = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_0);
+            bins jalr_correct = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_1);
+            illegal_bins jalr_wrong = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_0);
         }
         opcode_jump_cross  : cross opcode_cp,jump_cp{
-            bins jal_correct = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_1);
-            illegal_bins jal_wrong = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_0);
+            bins jal_correct = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_1);
+            illegal_bins jal_wrong = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_0);
         }
         opcode_branch_cross: cross opcode_cp,branch_cp{
             bins branch_correct = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_1);
             illegal_bins branch_wrong = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_0);
         }
 
-        write_cross         : cross write_en, write_id;
+        write_cross        : cross write_enable_cp, write_id_cp{
+            bins write_enabled = binsof(write_en_cp.write) && binsof(write_id_cp.rd_id);
+            illegal_bins write_disabled = binsof(write_en_cp.no_write) && binsof(write_id_cp.rd_id);
+        }
+
         // opcode_funct3_cross : cross opcode, funct3;
         // opcode_funct7_cross : cross opcode, funct7;
 
