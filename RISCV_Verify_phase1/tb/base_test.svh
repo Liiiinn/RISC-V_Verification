@@ -27,7 +27,8 @@ class base_test extends uvm_test;
     top_config  m_top_config;
     // Testbench environment
     tb_env  m_tb_env;
-    // Number of data transactions to be sent
+    // Number of transactions to be sent
+    int unsigned no_of_rstn = 5;
     int unsigned no_of_data = 10000;
 
     //------------------------------------------------------------------------------
@@ -73,18 +74,39 @@ class base_test extends uvm_test;
         phase.raise_objection(this);
         
         fork
-            begin
-                // Reset DUT before start
-                rstn = rstn_seq::type_id::create("rstn");
+            // Thread 1: Reset stimulus (initial + runtime resets)
+            begin: rstn_thread
+                // Initial reset
+                rstn = rstn_seq::type_id::create("rstn_init");
                 if (!(rstn.randomize() with {
                     delay == 0;
                     length == 2;
                 })) `uvm_fatal(get_name(), "Failed to randomize rstn")
-                `uvm_info(get_name(), "Starting reset sequence", UVM_LOW)
+
+                `uvm_info(get_name(), "Initial reset sent", UVM_LOW)
+
                 rstn.start(m_tb_env.m_rstn_agent.m_sequencer);
 
-                // Randomize input data
+                // Runtime resets
+                repeat (no_of_rstn) begin
+                    #( $urandom_range(200, 1000) * 1ns ); // Random wait between resets
+
+                    rstn = rstn_seq::type_id::create("rstn_runtime");
+                    if (!(rstn.randomize() with {
+                        delay == 0;
+                        length == $urandom_range(1, 3);
+                    })) `uvm_fatal(get_name(), "Failed to randomize rstn")
+
+                    `uvm_info(get_name(), $sformatf("Runtime reset sent, length=%0d", rstn.length), UVM_LOW)
+
+                    rstn.start(m_tb_env.m_rstn_agent.m_sequencer);
+                end
+            end
+
+            // Thread 2: ID stage stimulus
+            begin: id_thread
                 `uvm_info(get_name(), $sformatf("Starting %0d ID transactions", no_of_data), UVM_LOW)
+
                 repeat (no_of_data) begin
                     id = id_seq_random_sequence::type_id::create("id");
                     if (!id.randomize()) begin
@@ -92,17 +114,21 @@ class base_test extends uvm_test;
                     end
                     id.start(m_tb_env.m_id_agent.m_sequencer);
                 end
+
                 `uvm_info(get_name(),"All sequences sent", UVM_LOW)
                 #100ns;
             end
 
-            begin
+            // Thread 3: Timeout protection
+            begin: timeout_thread
                 #100us;
                 `uvm_fatal(get_name(),"Test timeout, Check if clock is running")
             end
-        join_any
-        disable fork;
-        // When both processes are done, wait 100ns
+        join_none
+
+        wait fork;
+        disable timeout_thread;
+        
         // Drop objection if no UVM test is running
         phase.drop_objection(this);
         `uvm_info(get_name(), "Test completed, objection dropped", UVM_LOW)
