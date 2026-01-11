@@ -19,7 +19,7 @@ endclass
 class id_seq_random_sequence extends id_seq_base_sequence;
     `uvm_object_utils(id_seq_random_sequence)
 
-    int unsigned num_transactions = 100;
+    // int unsigned num_transactions = 100;
 
     function new(string name = "id_seq_random_sequence");
         super.new(name);
@@ -27,17 +27,14 @@ class id_seq_random_sequence extends id_seq_base_sequence;
 
     virtual task body();
         id_seq_item req;
-
-        repeat (num_transactions) begin
-            req = id_seq_item::type_id::create("req");
-            start_item(req);
-
-            if (!req.randomize()) begin
-                `uvm_fatal(get_name(), "id_seq_item randomization failed")
-            end
-
-            finish_item(req);
+        // repeat (num_transactions) begin
+        req = id_seq_item::type_id::create("req");
+        start_item(req);
+        if (!req.randomize()) begin
+            `uvm_fatal(get_name(), "id_seq_item randomization failed")
         end
+        finish_item(req);
+        // end
     endtask
 endclass
 

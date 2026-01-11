@@ -28,7 +28,7 @@ class base_test extends uvm_test;
     // Testbench environment
     tb_env  m_tb_env;
     // Number of data transactions to be sent
-    int unsigned no_of_data = 100;
+    int unsigned no_of_data = 10000;
 
     //------------------------------------------------------------------------------
     // FUNCTION: new
@@ -68,6 +68,7 @@ class base_test extends uvm_test;
         `uvm_info(get_name(),$sformatf("ID agent: %p",m_tb_env.m_id_agent),UVM_NONE)
         `uvm_info(get_name(),$sformatf("Scoreboard: %p",m_tb_env.m_id_scoreboard),UVM_NONE)
         `uvm_info(get_name(),$sformatf("UVM TB Starts UVM test; '%s'",get_name()),UVM_NONE)
+        
         // Raise objection if no UVM test is running
         phase.raise_objection(this);
         
