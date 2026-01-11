@@ -235,7 +235,7 @@ class id_scoreboard extends uvm_component;
             illegal_bins branch_wrong = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_0);
         }
 
-        write_cross         : cross write_en, write_id;
+        // write_cross         : cross write_en, write_id;
         // opcode_funct3_cross : cross opcode, funct3;
         // opcode_funct7_cross : cross opcode, funct7;
 
