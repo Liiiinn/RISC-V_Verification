@@ -77,11 +77,12 @@ class id_scoreboard extends uvm_component;
         // instruction fields coverage
         opcode_cp: coverpoint opcode {
             bins R_type = {7'b0110011};
-            bins I_type = {7'b0010011, 7'b0000011, 7'b1100111};
+            bins I_type_normal = {7'b0010011, 7'b0000011};
             bins S_type = {7'b0100011};
             bins B_type = {7'b1100011};
             bins U_type = {7'b0110111, 7'b0010111};
             bins J_type = {7'b1101111};
+            bins I_type_JALR = {7'b1100111};
             bins illegal = default;
         }
         funct3_cp : coverpoint funct3{
@@ -203,39 +204,25 @@ class id_scoreboard extends uvm_component;
 
     covergroup cross_covergroup;
         option.per_instance = 1;
-        opcode_cp :coverpoint opcode {
-            bins JALR = {7'b1100111};
-            bins JAL = {7'b1101111};
-            bins branch = {7'b1100011};
-            bins other = default;
-        }
-        jumpr_cp :coverpoint control_signals.is_jumpr{
-            bins is_jumpr_0 = {0};
-            bins is_jumpr_1 = {1};
-        }
-        jump_cp :coverpoint control_signals.is_jump{
-            bins is_jump_0 = {0};
-            bins is_jump_1 = {1};
-        }
-        branch_cp :coverpoint control_signals.is_branch{
-            bins is_branch_0 = {0};
-            bins is_branch_1 = {1};
-        }
 
         opcode_jumpr_cross : cross opcode_cp,jumpr_cp{
-            bins jalr_correct = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_1);
-            illegal_bins jalr_wrong = binsof(opcode_cp.JALR) && binsof(jumpr_cp.is_jumpr_0);
+            bins jalr_correct = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_1);
+            illegal_bins jalr_wrong = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_0);
         }
         opcode_jump_cross  : cross opcode_cp,jump_cp{
-            bins jal_correct = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_1);
-            illegal_bins jal_wrong = binsof(opcode_cp.JAL) && binsof(jump_cp.is_jump_0);
+            bins jal_correct = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_1);
+            illegal_bins jal_wrong = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_0);
         }
         opcode_branch_cross: cross opcode_cp,branch_cp{
             bins branch_correct = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_1);
             illegal_bins branch_wrong = binsof(opcode_cp.branch) && binsof(branch_cp.is_branch_0);
         }
 
-        // write_cross         : cross write_en, write_id;
+        write_cross        : cross write_enable_cp, write_id_cp{
+            bins write_enabled = binsof(write_enable_cp.write) && binsof(write_id_cp.rd_id);
+            illegal_bins write_disabled = binsof(write_enable_cp.no_write) && binsof(write_id_cp.rd_id);
+        }
+
         // opcode_funct3_cross : cross opcode, funct3;
         // opcode_funct7_cross : cross opcode, funct7;
 
