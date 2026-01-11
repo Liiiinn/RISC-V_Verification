@@ -28,7 +28,7 @@ class base_test extends uvm_test;
     // Testbench environment
     tb_env  m_tb_env;
     // Number of transactions to be sent
-    int unsigned no_of_rstn = 5;
+    int unsigned no_of_rstn = 20;
     int unsigned no_of_data = 10000;
 
     //------------------------------------------------------------------------------
@@ -94,7 +94,8 @@ class base_test extends uvm_test;
                     rstn = rstn_seq::type_id::create("rstn_runtime");
                     if (!(rstn.randomize() with {
                         delay == 0;
-                        length == $urandom_range(1, 3);
+                        // length == $urandom_range(1, 3);
+                        length == 4;
                     })) `uvm_fatal(get_name(), "Failed to randomize rstn")
 
                     `uvm_info(get_name(), $sformatf("Runtime reset sent, length=%0d", rstn.length), UVM_LOW)
