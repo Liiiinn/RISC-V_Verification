@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # //  Questa Sim-64
 # //  Version 2024.1 win64 Feb  1 2024
 # //
@@ -46201,3 +46202,13 @@
 # Break at ./tb/tb_top.sv line 141
 # End time: 14:30:34 on Jan 11,2026, Elapsed time: 0:01:42
 # Errors: 0, Warnings: 2
+=======
+# vsim +UVM_TESTNAME=id_test +UVM_VERBOSITY=UVM_MEDIUM +UVM_NO_RELNOTES -do {add wave -r /*; run -all} -i work.tb_top 
+# ** Warning: (vsim-WLF-5000) WLF file currently in use: vsim.wlf
+#           File in use by:   Hostname:   ProcessID: 131
+#           Attempting to use alternate WLF file "./wlftms84tg".
+# ** Warning: (vsim-WLF-5001) Could not open WLF file: vsim.wlf
+#           Using alternate file: ./wlftms84tg
+# ** Error: (vsim-3170) Could not find 'D:\ETIN40-ICp2\Phase2\verification\sim_output\RISCV_Verify_phase1\work.tb_top'.
+# Error loading design
+>>>>>>> c9608e405833e357aad50611dcc424b595affde1

@@ -207,7 +207,6 @@ class id_scoreboard extends uvm_component;
 
         // For cross coverage
         opcode_cp: coverpoint opcode {
-            bins R_type = {7'b0110011};
             bins I_type_normal = {7'b0010011, 7'b0000011};
             bins S_type = {7'b0100011};
             bins B_type = {7'b1100011};
@@ -215,6 +214,14 @@ class id_scoreboard extends uvm_component;
             bins J_type = {7'b1101111};
             bins I_type_JALR = {7'b1100111};
             bins illegal = default;
+        }
+        write_enable_cp: coverpoint write_en{
+            bins write = {1};
+            bins no_write = {0};
+        }
+        write_id_cp : coverpoint write_id{
+            bins id_0 = {0};
+            bins id_legal[] = {[1:31]};
         }
         branch_cp : coverpoint control_signals.is_branch{
             bins is_branch_0 = {0};
@@ -243,8 +250,8 @@ class id_scoreboard extends uvm_component;
         }
 
         write_cross        : cross write_enable_cp, write_id_cp{
-            bins write_enabled = binsof(write_enable_cp.write) && binsof(write_id_cp.rd_id);
-            illegal_bins write_disabled = binsof(write_enable_cp.no_write) && binsof(write_id_cp.rd_id);
+            bins write_enabled = binsof(write_enable_cp.write) && binsof(write_id_cp.id_0);
+            illegal_bins write_disabled = binsof(write_enable_cp.no_write) && binsof(write_id_cp.id_legal);
         }
 
         // opcode_funct3_cross : cross opcode, funct3;
