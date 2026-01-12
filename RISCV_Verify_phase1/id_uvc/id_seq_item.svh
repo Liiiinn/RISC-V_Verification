@@ -21,16 +21,16 @@ class id_seq_item extends uvm_sequence_item;
     `uvm_object_utils(id_seq_item)
 
     // ===== DUT inputs =====
-    rand instruction_type    instruction;
-    rand instr_type          my_instr;
-    rand logic [31:0]        pc;
-    rand branch_predict_type branch_in;
-    rand logic               write_en;
-    rand logic [4:0]         write_id;
-    rand logic [31:0]        write_data;
+    randc instruction_type    instruction;
+    randc instr_type          my_instr;
+    randc logic [31:0]        pc;
+    randc branch_predict_type branch_in;
+    randc logic               write_en;
+    randc logic [4:0]         write_id;
+    randc logic [31:0]        write_data;
 
-    rand logic [4:0]  reg_id;
-    rand logic [19:0] imm_20bit;
+    randc logic [4:0]  reg_id;
+    randc logic [19:0] imm_20bit;
 
     // ===== Global constraints =====
 

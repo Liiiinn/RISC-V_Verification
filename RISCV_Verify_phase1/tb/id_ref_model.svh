@@ -2,10 +2,13 @@ import uvm_pkg::*;
 `include "uvm_macros.svh"
 import common::*;
 
+`uvm_analysis_imp_decl(_instr)
+`uvm_analysis_imp_decl(_rstn)
+
 class id_ref_model extends uvm_component;
 	// Analysis port implementation to receive items
-	uvm_analysis_imp #(id_seq_item,id_ref_model) analysis_imp;
-	uvm_analysis_imp #(rstn_seq_item, id_ref_model) rstn_imp;
+	uvm_analysis_imp_instr #(id_seq_item,id_ref_model) analysis_imp;
+	uvm_analysis_imp_rstn #(rstn_seq_item, id_ref_model) rstn_imp;
 	// Analysis port to send expected output items to scoreboard
 	uvm_analysis_port #(id_out_seq_item) id_ref_ap;
 	`uvm_component_utils(id_ref_model)
@@ -26,16 +29,17 @@ class id_ref_model extends uvm_component;
         `uvm_info(get_name(), "Register file initialized to zero", UVM_MEDIUM)
     endfunction
 
-	function void write(id_seq_item item, rstn_seq_item rstn_item);
+	function void write_instr(id_seq_item item);
 	  	id_out_seq_item exp = id_out_seq_item::type_id::create("exp");
-
-		if (rstn_item.rstn_value == 1'b0) begin
-			reg_file = '{default: 32'h0};
-			// `uvm_info(get_name(), "Reference model reset: reg_file cleared", UVM_LOW)
-		end
-		
 	  	decode_instr(exp, item); // decode;
 	  	id_ref_ap.write(exp);
+	endfunction
+
+	function void write_rstn(rstn_seq_item rstn_item);
+		if (rstn_item.rstn_value == 1'b0) begin
+			reg_file = '{default: 32'h0};
+			// `uvm_info(get_name(), "Reset received: Register file cleared to zero", UVM_MEDIUM)
+		end
 	endfunction
 
 	function void decode_instr(id_out_seq_item exp, id_seq_item item); // Input a handle so exp can be modified
