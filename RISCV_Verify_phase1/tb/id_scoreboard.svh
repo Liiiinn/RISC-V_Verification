@@ -15,7 +15,6 @@ class id_scoreboard extends uvm_component;
     uvm_analysis_imp_scoreboard_act_id_out #(id_out_seq_item,id_scoreboard) m_act_id_out_ap;  // from DUT monitor
 
     virtual clk_if vif;
-    id_seq_item input_history_q[$];
     clk_config m_clk_config;
     
     // Queues to store transactions
@@ -310,8 +309,6 @@ class id_scoreboard extends uvm_component;
         `uvm_info(get_name(), $sformatf("Received DUT inputs transanction :\n%s", t.sprint()), UVM_HIGH);
         act_in_q.push_back(t);
 
-        input_history_q.push_back(t);
-
         // ===== 采样输入覆盖 =====
         opcode      = t.instruction.opcode;
         funct3      = t.instruction.funct3;
@@ -493,7 +490,6 @@ class id_scoreboard extends uvm_component;
                 rstn_seq_item r_item = rstn_q.pop_front();
                 if (r_item.rstn_value == 1'b0) begin
                     // 在 reset 期间清空所有队列，避免过时事务导致误报
-                    input_history_q.delete();
                     exp_out_q.delete();
                     act_out_q.delete();
                     act_in_q.delete();
@@ -515,14 +511,14 @@ class id_scoreboard extends uvm_component;
             end
 
             // 3) 当两侧都有输出可比时，逐对比 FIFO（基本假设：ref 与 DUT 输出顺序一致）
-            if (exp_out_q.size() > 0 && act_out_q.size() > 0 && input_history_q.size() > 0) begin
+            if (exp_out_q.size() > 0 && act_out_q.size() > 0 && act_in_q.size() > 0) begin
                 id_seq_item  in;
                 id_out_seq_item exp_item;
                 id_out_seq_item act_item;
                 
                 logic [31:0] instruction_32bit;
 
-                in = input_history_q.pop_front();
+                in = act_in_q.pop_front();
                 exp_item = exp_out_q.pop_front();
                 act_item = act_out_q.pop_front();
 
