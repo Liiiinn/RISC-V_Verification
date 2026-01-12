@@ -83,6 +83,7 @@ class tb_env extends uvm_env;
         m_id_ref_model.id_ref_ap.connect(m_id_scoreboard.m_exp_id_out_ap);
         // Connect id_agent monitor to reference model
         m_id_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.analysis_imp);
+        m_rstn_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.rstn_imp);
     endfunction : connect_phase
 
     virtual task run_phase(uvm_phase phase);

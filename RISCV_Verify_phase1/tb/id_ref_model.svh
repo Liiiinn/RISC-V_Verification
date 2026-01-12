@@ -3,7 +3,10 @@ import uvm_pkg::*;
 import common::*;
 
 class id_ref_model extends uvm_component;
+	// Analysis port implementation to receive items
 	uvm_analysis_imp #(id_seq_item,id_ref_model) analysis_imp;
+	uvm_analysis_imp #(rstn_seq_item, id_ref_model) rstn_imp;
+	// Analysis port to send expected output items to scoreboard
 	uvm_analysis_port #(id_out_seq_item) id_ref_ap;
 	`uvm_component_utils(id_ref_model)
 
@@ -12,6 +15,7 @@ class id_ref_model extends uvm_component;
 	function new(string name, uvm_component parent);
 		super.new(name,parent);
 		analysis_imp = new("analysis_imp", this);
+		rstn_imp = new("rstn_imp", this);
 		id_ref_ap = new("id_ref_ap", this);
 	endfunction
 
@@ -22,9 +26,14 @@ class id_ref_model extends uvm_component;
         `uvm_info(get_name(), "Register file initialized to zero", UVM_MEDIUM)
     endfunction
 
-	function void write(id_seq_item item);
+	function void write(id_seq_item item, rstn_seq_item rstn_item);
 	  	id_out_seq_item exp = id_out_seq_item::type_id::create("exp");
-	  	// exp.instr = item.instr;
+
+		if (rstn_item.rstn_value == 1'b0) begin
+			reg_file = '{default: 32'h0};
+			// `uvm_info(get_name(), "Reference model reset: reg_file cleared", UVM_LOW)
+		end
+		
 	  	decode_instr(exp, item); // decode;
 	  	id_ref_ap.write(exp);
 	endfunction

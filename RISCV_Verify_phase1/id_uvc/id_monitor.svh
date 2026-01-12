@@ -7,10 +7,10 @@ import common::*;
 `include "uvm_macros.svh"
 
 class id_monitor extends uvm_monitor;
-
     `uvm_component_utils(id_monitor)
     id_config m_config;
     uvm_analysis_port #(id_seq_item) m_analysis_port;
+    
     function new(string name = "id_monitor", uvm_component parent = null);
         super.new(name, parent);
         if (!uvm_config_db#(id_config)::get(this, "", "config", m_config)) begin
