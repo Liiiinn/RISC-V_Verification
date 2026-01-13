@@ -38,10 +38,10 @@ module register_file(
 
 
     assign read1_data = (read1_id == 0) ? 0 : 
-			(read1_id == write_id) ? write_data:
+			(write_en && read1_id == write_id) ? write_data:
 			    registers[read1_id];
     assign read2_data = (read2_id == 0) ? 0 :
-			(read2_id == write_id) ? write_data:
+			(write_en && read2_id == write_id) ? write_data:
 			    registers[read2_id];
 
 endmodule

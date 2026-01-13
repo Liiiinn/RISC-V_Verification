@@ -30,9 +30,6 @@ class id_scoreboard extends uvm_component;
 
     // input variables bound to coverage
     bit write_en;
-    bit is_branch;
-    bit is_jump;
-    bit is_jumpr;
     logic signed [31:0]write_data;
     bit [4:0]write_id;
     bit branch_in;
@@ -49,6 +46,9 @@ class id_scoreboard extends uvm_component;
     bit[4:0] reg_rd_id;
     logic signed [31:0] immediate_data,read_data1,read_data2;
     control_type control_signals;
+    bit is_branch;
+    bit is_jump;
+    bit is_jumpr;
     bit branch_out;
     bit [31:0] pc_out;
     uvm_event end_of_stimulus_ev;
