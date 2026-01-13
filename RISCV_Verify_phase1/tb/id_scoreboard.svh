@@ -84,7 +84,7 @@ class id_scoreboard extends uvm_component;
             bins I_type_JALR = {7'b1100111};
             bins illegal = default;
         }
-        funct3_cp : coverpoint funct3{
+        funct3_cp : coverpoint funct3{ // 可以考虑添加gating
             bins funct3_000 = {3'b000};
             bins funct3_001 = {3'b001};
             bins funct3_010 = {3'b010};
@@ -94,20 +94,20 @@ class id_scoreboard extends uvm_component;
             bins funct3_110 = {3'b110};
             bins funct3_111 = {3'b111};
         }
-        funct7_cp : coverpoint funct7{
+        funct7_cp : coverpoint funct7{ // 可以考虑添加gating
             bins funct7_0000000 = {7'b0000000};
             bins funct7_0100000 = {7'b0100000};
             bins funct7_0000001 = {7'b0000001};
         }
-        rd_cp : coverpoint rd{
+        rd_cp : coverpoint rd iff(opcode != 7'b0100011 && opcode != 7'b1100011) {
             bins rd_0 = {0};
             bins rd_id[] = {[1:31]};
         }
-        rs1_cp : coverpoint rs1{
+        rs1_cp : coverpoint rs1 iff(opcode != 7'b0110111 && opcode != 7'b0010111 && opcode != 7'b1101111) {
             bins rs1_0 = {0};
             bins rs1_id[] = {[1:31]};
         }
-        rs2_cp : coverpoint rs2{
+        rs2_cp : coverpoint rs2 iff(opcode == 7'b0110011 || opcode == 7'b0100011 || opcode == 7'b1100011) {
             bins rs2_0 = {0};
             bins rs2_id[] = {[1:31]};
         }
@@ -346,9 +346,6 @@ class id_scoreboard extends uvm_component;
         pc_out         = t.pc_out;
 
         id_out_covergroup.sample();
-
-        // ===== 采样 cross 覆盖 =====
-        cross_covergroup.sample();
     endfunction
 
     // 比较控制信号的函数
@@ -522,15 +519,21 @@ class id_scoreboard extends uvm_component;
                 exp_item = exp_out_q.pop_front();
                 act_item = act_out_q.pop_front();
 
-                // opcode     = in.instruction.opcode;
+                
+                // ===== 采样 cross 覆盖 =====
+                opcode    = in.instruction.opcode; // 目前没问题，不放心可以改名，例如cross_opcode
                 // funct3     = in.instruction.funct3;
                 // funct7     = in.instruction.funct7;
-                // write_en   = in.write_en;
-                // write_id   = in.write_id;
+                write_en  = in.write_en;
+                write_id  = in.write_id;
                 // branch_in  = in.branch_in;
-
                 // control_signals = act_item.control_signals;
+                is_branch = act_item.control_signals.is_branch;
+                is_jump   = act_item.control_signals.is_jump;
+                is_jumpr  = act_item.control_signals.is_jumpr;
+                cross_covergroup.sample();
            
+                // For info logging
                 instruction_32bit = {
                     in.instruction.funct7,
                     in.instruction.rs2,

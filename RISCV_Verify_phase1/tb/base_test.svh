@@ -29,7 +29,7 @@ class base_test extends uvm_test;
     tb_env  m_tb_env;
     // Number of transactions to be sent
     int unsigned no_of_rstn = 20;
-    int unsigned no_of_data = 15000;
+    int unsigned no_of_data = 30000;
 
     //------------------------------------------------------------------------------
     // FUNCTION: new
