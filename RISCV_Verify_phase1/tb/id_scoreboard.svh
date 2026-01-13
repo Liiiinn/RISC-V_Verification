@@ -30,6 +30,9 @@ class id_scoreboard extends uvm_component;
 
     // input variables bound to coverage
     bit write_en;
+    bit is_branch;
+    bit is_jump;
+    bit is_jumpr;
     logic signed [31:0]write_data;
     bit [4:0]write_id;
     bit branch_in;
@@ -321,6 +324,7 @@ class id_scoreboard extends uvm_component;
         write_id    = t.write_id;
         branch_in   = t.branch_in;
         pc          = t.pc;
+
 
         id_in_covergroup.sample();
     endfunction
