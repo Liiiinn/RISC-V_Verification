@@ -21,29 +21,29 @@ class id_seq_item extends uvm_sequence_item;
     `uvm_object_utils(id_seq_item)
 
     // ===== DUT inputs =====
-    randc instruction_type    instruction;
-    randc instr_type          my_instr;
-    randc logic [31:0]        pc;
-    randc branch_predict_type branch_in;
-    randc logic               write_en;
-    randc logic [4:0]         write_id;
-    randc logic [31:0]        write_data;
+    rand instruction_type    instruction;
+    rand instr_type          my_instr;
+    rand logic [31:0]        pc;
+    rand branch_predict_type branch_in;
+    rand logic               write_en;
+    rand logic [4:0]         write_id;
+    rand logic [31:0]        write_data;
 
-    randc logic [4:0]  reg_id;
-    randc logic [19:0] imm_20bit;
+    // randc logic [4:0]  reg_id;
+    rand logic [19:0] imm_20bit;
 
     // ===== Global constraints =====
 
     constraint instr_type_dist {
         my_instr dist {
-            Instr_R_type   := 25,
-            Instr_I_type   := 25,
+            Instr_R_type   := 35,
+            Instr_I_type   := 20,
             Instr_I_L_type := 10,
-            Instr_S_type   := 15,
+            Instr_S_type   := 10,
             Instr_B_type   := 15,
-            Instr_U_type   := 5,
+            Instr_U_type   := 3,
             Instr_J_type   := 5,
-            Instr_I_J_type := 5
+            Instr_I_J_type := 3
         };
     }
 
@@ -52,8 +52,12 @@ class id_seq_item extends uvm_sequence_item;
         pc inside {[32'h0000_0000:32'h0000_FFFC]};
     }
 
-    constraint writeback_c {
-        write_en dist {0 := 3, 1 := 1};
+    // constraint writeback_c {
+    //     write_en dist {0 := 3, 1 := 1};
+    //     write_id inside {[0:31]};
+    // }
+    constraint writeback_c{
+        write_en dist {1 := 7, 0 := 3};
         write_id inside {[0:31]};
     }
 
@@ -76,12 +80,26 @@ class id_seq_item extends uvm_sequence_item;
         // R-type
         (my_instr == Instr_R_type) -> {
             instruction.opcode == 7'b0110011;
-            instruction.funct3 inside {[0:7]};
-            instruction.funct7 inside {7'b0000000, 7'b0100000, 7'b0000001};
+            // instruction.funct3 inside {3'b000,3'b001,3'b010,3'b011,3'b100,3'b101,3'b110,3'b111};
+            instruction.funct7 dist {
+                7'b0000000 := 8, 
+                7'b0100000 := 2,
+                7'b0000001 := 6
+            };
             instruction.rd  == write_id;
-            instruction.rs1 == reg_id;
-            instruction.rs2 == reg_id;
+            instruction.rs1 inside {[1:31]};
+            instruction.rs2 inside {[1:31]};
+            // instruction.rs2 == reg_id;
             write_en == 1;
+            (instruction.funct7 == 7'b0000000) ->{
+                instruction.funct3 inside {3'b000,3'b001,3'b010,3'b011,3'b100,3'b101,3'b110,3'b111};
+            }
+            (instruction.funct7 == 7'b0100000) ->{
+                instruction.funct3 dist {3'b000,3'b101};
+            }
+            (instruction.funct7 == 7'b0000001) ->{
+                instruction.funct3 dist {3'b000,3'b001,3'b100,3'b101,3'b110,3'b111};
+            }
         }
 
         // I-type ALU
@@ -89,17 +107,17 @@ class id_seq_item extends uvm_sequence_item;
             instruction.opcode == 7'b0010011;
             instruction.funct3 inside {[0:7]};
             instruction.rd  == write_id;
-            instruction.rs1 == reg_id;
+            instruction.rs1 inside {[1:31]};
             instruction[31:20] == imm_20bit[11:0];
             write_en == 1;
         }
 
         // Load
         (my_instr == Instr_I_L_type) -> {
-            instruction.opcode == 7'b0000011;
+            instruction.opcode == 7'b0000011;          
             instruction.funct3 inside {3'b000,3'b001,3'b010};
             instruction.rd  == write_id;
-            instruction.rs1 == reg_id;
+            instruction.rs1 inside {[1:31]};
             instruction[31:20] == imm_20bit[11:0];
             write_en == 1;
         }
@@ -109,7 +127,7 @@ class id_seq_item extends uvm_sequence_item;
             instruction.opcode == 7'b1100111;
             instruction.funct3 == 3'b000;
             instruction.rd  == write_id;
-            instruction.rs1 == reg_id;
+            instruction.rs1 inside {[1:31]};
             instruction[31:20] == imm_20bit[11:0];
             write_en == 1;
         }
@@ -118,8 +136,8 @@ class id_seq_item extends uvm_sequence_item;
         (my_instr == Instr_S_type) -> {
             instruction.opcode == 7'b0100011;
             instruction.funct3 inside {3'b000,3'b001,3'b010};
-            instruction.rs1 == reg_id;
-            instruction.rs2 == reg_id;
+            instruction.rs1 inside {[1:31]};
+            instruction.rs2 inside {[1:31]};
             instruction[31:25] == imm_20bit[6:0];
             instruction[11:7]  == imm_20bit[4:0];
             write_en == 0;
@@ -133,8 +151,8 @@ class id_seq_item extends uvm_sequence_item;
                 3'b000,3'b001,3'b100,
                 3'b101,3'b110,3'b111
             };
-            instruction.rs1 == reg_id;
-            instruction.rs2 == reg_id;
+            instruction.rs1 inside {[1:31]};
+            instruction.rs2 inside {[1:31]};
             instruction[31]    == imm_20bit[12];
             instruction[30:25] == imm_20bit[5:0];
             instruction[11:8]  == imm_20bit[3:0];
@@ -145,7 +163,7 @@ class id_seq_item extends uvm_sequence_item;
 
         // U-type
         (my_instr == Instr_U_type) -> {
-            instruction.opcode inside {7'b0110111,7'b0010111};
+            instruction.opcode dist {7'b0110111:=5,7'b0010111:=5};
             instruction.rd == write_id;
             instruction[31:12] == imm_20bit;
             write_en == 1;

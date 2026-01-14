@@ -63,12 +63,12 @@ class id_scoreboard extends uvm_component;
             bins write = {1};
             bins no_write = {0};
         }
-        write_data_cp: coverpoint write_data{
-            // Idea: 可能还需要考虑特殊数据
-            bins data_0 = {0};
-            bins data_pos = {[1:$]};
-            bins data_neg = {[32'h80000000:32'hBFFFFFFF]}; // -2147483648 to -1
-        }
+        // write_data_cp: coverpoint write_data{
+        //     // Idea: 可能还需要考虑特殊数据
+        //     bins data_0 = {0};
+        //     bins data_pos = {[1:$]};
+        //     bins data_neg = {[32'h80000000:32'hBFFFFFFF]}; // -2147483648 to -1
+        // }
         write_id_cp : coverpoint write_id{
             bins id_0 = {0};
             bins id_legal[] = {[1:31]};
@@ -76,12 +76,13 @@ class id_scoreboard extends uvm_component;
         // instruction fields coverage
         opcode_cp: coverpoint opcode {
             bins R_type = {7'b0110011};
-            bins I_type_normal = {7'b0010011, 7'b0000011};
+            bins I_type_normal = {7'b0010011};
+            bins I_type_load = {7'b0000011};
+            bins J_type = {7'b1101111};
+            bins I_type_JALR = {7'b1100111};
             bins S_type = {7'b0100011};
             bins B_type = {7'b1100011};
             bins U_type = {7'b0110111, 7'b0010111};
-            bins J_type = {7'b1101111};
-            bins I_type_JALR = {7'b1100111};
             bins illegal = default;
         }
         funct3_cp : coverpoint funct3{
@@ -118,8 +119,8 @@ class id_scoreboard extends uvm_component;
         im_cp : coverpoint immediate_data{
             // Idea: 可能还需要考虑mul和div的溢出
             bins imm_0 = {0};
-            bins imm_pos = {[1:$]};
-            bins imm_neg = {[32'h80000000:32'hBFFFFFFF]}; // -2147483648 to -1
+            bins imm_pos = {[1:32'sd2147483647]};
+            bins imm_neg = {[32'sd2147483648:-1]}; // -2147483648 to -1
         }
         reg_rd_id_cp : coverpoint reg_rd_id{
             bins rd_0 = {0};
@@ -127,13 +128,13 @@ class id_scoreboard extends uvm_component;
         }
         read_data1_cp : coverpoint read_data1{
             bins data1_0 = {0};
-            bins data1_pos = {[1:$]};
-            bins data1_neg = {[32'h80000000:32'hBFFFFFFF]};
+            bins data1_pos = {[1:32'sd2147483647]};
+            bins data1_neg = {[32'sd2147483648:-1]};
         }
         read_data2_cp : coverpoint read_data2{
             bins data2_0 = {0};
-            bins data2_pos = {[1:$]};
-            bins data2_neg = {[32'h80000000:32'hBFFFFFFF]};
+            bins data2_pos = {[1:32'sd2147483647]};
+            bins data2_neg = {[32'sd2147483648:-1]};
         }
         // control signals covergroup
         alu_cp : coverpoint control_signals.alu_op{
@@ -206,10 +207,10 @@ class id_scoreboard extends uvm_component;
 
         // For cross coverage
         opcode_cp: coverpoint opcode {
-            bins I_type_normal = {7'b0010011, 7'b0000011};
-            bins S_type = {7'b0100011};
+            // bins I_type_normal = {7'b0010011, 7'b0000011};
+            // bins S_type = {7'b0100011};
             bins B_type = {7'b1100011};
-            bins U_type = {7'b0110111, 7'b0010111};
+            // bins U_type = {7'b0110111, 7'b0010111};
             bins J_type = {7'b1101111};
             bins I_type_JALR = {7'b1100111};
             bins illegal = default;
@@ -218,9 +219,10 @@ class id_scoreboard extends uvm_component;
             bins write = {1};
             bins no_write = {0};
         }
-        write_id_cp : coverpoint write_id{
+        write_id_cp : coverpoint write_id iff(write_en){
             bins id_0 = {0};
             bins id_legal[] = {[1:31]};
+
         }
         branch_cp : coverpoint control_signals.is_branch{
             bins is_branch_0 = {0};
@@ -348,7 +350,7 @@ class id_scoreboard extends uvm_component;
         id_out_covergroup.sample();
 
         // ===== 采样 cross 覆盖 =====
-        cross_covergroup.sample();
+        // cross_covergroup.sample();
     endfunction
 
     // 比较控制信号的函数
@@ -521,15 +523,6 @@ class id_scoreboard extends uvm_component;
                 in = act_in_q.pop_front();
                 exp_item = exp_out_q.pop_front();
                 act_item = act_out_q.pop_front();
-
-                // opcode     = in.instruction.opcode;
-                // funct3     = in.instruction.funct3;
-                // funct7     = in.instruction.funct7;
-                // write_en   = in.write_en;
-                // write_id   = in.write_id;
-                // branch_in  = in.branch_in;
-
-                // control_signals = act_item.control_signals;
            
                 instruction_32bit = {
                     in.instruction.funct7,
@@ -539,6 +532,15 @@ class id_scoreboard extends uvm_component;
                     in.instruction.rd,
                     in.instruction.opcode
                 };
+                opcode     = in.instruction.opcode;
+                funct3     = in.instruction.funct3;
+                funct7     = in.instruction.funct7;
+                write_en   = in.write_en;
+                write_id   = in.write_id;
+                branch_in  = in.branch_in;
+
+                control_signals = act_item.control_signals;
+                cross_covergroup.sample(); // 采样 cross 覆盖
 
                 // ---- pass-through signals ----
                 if (act_item.pc_out !== exp_item.pc_out) begin
