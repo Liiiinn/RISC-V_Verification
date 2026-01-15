@@ -3,139 +3,183 @@
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
-import common::*;
 
 class cpu_seq_item extends uvm_sequence_item;
+    `uvm_object_utils(cpu_seq_item)
     
-    // 指令执行信息
-    logic [31:0] pc;
-    logic [31:0] instruction;
+    // ========================================================================
+    // 基本执行信息
+    // ========================================================================
+    logic [31:0] pc;                 // 程序计数器
+    logic [31:0] instruction;        // 指令编码
+    longint      cycle;              // 周期计数
     
-    // 指令类型（译码后）
-    opcode_t opcode;
-    logic [2:0] funct3;
-    logic [6:0] funct7;
+    // ========================================================================
+    // 寄存器写入信息
+    // ========================================================================
+    bit          rd_we;              // 寄存器写使能
+    logic [4:0]  rd_addr;            // 目标寄存器地址
+    logic [31:0] rd_data;            // 目标寄存器数据
     
-    // 操作数
-    logic [4:0] rs1, rs2, rd;
-    logic [31:0] rs1_data, rs2_data;
-    logic [31:0] imm;
+    // ========================================================================
+    // 内存访问信息
+    // ========================================================================
+    bit          mem_read;           // 内存读标志
+    bit          mem_write;          // 内存写标志
+    logic [31:0] mem_addr;           // 内存地址
+    logic [31:0] mem_wdata;          // 内存写数据
+    logic [31:0] mem_rdata;          // 内存读数据
     
-    // 执行结果
-    logic [31:0] alu_result;
-    logic [31:0] reg_wdata;  // 写回寄存器的数据
-    bit reg_write;
-    
-    // 内存访问
-    bit mem_access;
-    bit mem_write;
-    logic [31:0] mem_addr;
-    logic [31:0] mem_data;
-    logic [3:0] mem_be;
-    
+    // ========================================================================
     // 分支信息
-    bit is_branch;
-    bit branch_taken;
-    logic [31:0] branch_target;
+    // ========================================================================
+    bit          is_branch;          // 是否为分支指令
+    bit          branch_taken;       // 分支是否跳转
+    logic [31:0] branch_target;      // 分支目标地址
     
-    // 时间戳
-    time timestamp;
+    // ========================================================================
+    // 异常信息
+    // ========================================================================
+    bit          exception_occurred; // 异常发生标志
+    logic [3:0]  exception_cause;    // 异常原因
+    logic [31:0] exception_tval;     // 异常值（trap value）
     
-    `uvm_object_utils_begin(cpu_seq_item)
-        `uvm_field_int(pc, UVM_ALL_ON|UVM_HEX)
-        `uvm_field_int(instruction, UVM_ALL_ON|UVM_HEX)
-        `uvm_field_int(opcode, UVM_ALL_ON)
-        `uvm_field_int(rs1, UVM_ALL_ON|UVM_DEC)
-        `uvm_field_int(rs2, UVM_ALL_ON|UVM_DEC)
-        `uvm_field_int(rd, UVM_ALL_ON|UVM_DEC)
-        `uvm_field_int(alu_result, UVM_ALL_ON|UVM_HEX)
-        `uvm_field_int(mem_access, UVM_ALL_ON)
-        `uvm_field_int(is_branch, UVM_ALL_ON)
-    `uvm_object_utils_end
+    // ========================================================================
+    // CSR访问信息（可选）
+    // ========================================================================
+    bit          csr_read;           // CSR读标志
+    bit          csr_write;          // CSR写标志
+    logic [11:0] csr_addr;           // CSR地址
+    logic [31:0] csr_wdata;          // CSR写数据
+    logic [31:0] csr_rdata;          // CSR读数据
     
+    // ========================================================================
+    // Constructor
+    // ========================================================================
     function new(string name = "cpu_seq_item");
         super.new(name);
-    endfunction
-    
-    // 指令名称获取
-    function string get_instruction_name();
-        case (opcode)
-            OP_REG: begin
-                case ({funct7, funct3})
-                    {7'b0000000, 3'b000}: return "ADD";
-                    {7'b0100000, 3'b000}: return "SUB";
-                    {7'b0000000, 3'b111}: return "AND";
-                    {7'b0000000, 3'b110}: return "OR";
-                    {7'b0000000, 3'b100}: return "XOR";
-                    {7'b0000000, 3'b001}: return "SLL";
-                    {7'b0000000, 3'b101}: return "SRL";
-                    {7'b0100000, 3'b101}: return "SRA";
-                    {7'b0000000, 3'b010}: return "SLT";
-                    {7'b0000000, 3'b011}: return "SLTU";
-                    default: return "R-TYPE";
-                endcase
-            end
-            OP_IMM: begin
-                case (funct3)
-                    3'b000: return "ADDI";
-                    3'b111: return "ANDI";
-                    3'b110: return "ORI";
-                    3'b100: return "XORI";
-                    3'b001: return "SLLI";
-                    3'b101: return (funct7[5]) ? "SRAI" : "SRLI";
-                    3'b010: return "SLTI";
-                    3'b011: return "SLTIU";
-                    default: return "I-TYPE(ALU)";
-                endcase
-            end
-            OP_LOAD: return "LOAD";
-            OP_STORE: return "STORE";
-            OP_BRANCH: begin
-                case (funct3)
-                    3'b000: return "BEQ";
-                    3'b001: return "BNE";
-                    3'b100: return "BLT";
-                    3'b101: return "BGE";
-                    3'b110: return "BLTU";
-                    3'b111: return "BGEU";
-                    default: return "BRANCH";
-                endcase
-            end
-            OP_JAL: return "JAL";
-            OP_JALR: return "JALR";
-            OP_LUI: return "LUI";
-            OP_AUIPC: return "AUIPC";
-            default: return "UNKNOWN";
-        endcase
-    endfunction
-    
-    // 解码指令
-    function void decode_instruction();
-        opcode = opcode_t'(instruction[6:0]);
-        rd = instruction[11:7];
-        funct3 = instruction[14:12];
-        rs1 = instruction[19:15];
-        rs2 = instruction[24:20];
-        funct7 = instruction[31:25];
         
-        // 解析立即数（根据指令类型）
-        case (opcode)
-            OP_IMM, OP_LOAD, OP_JALR: 
-                imm = {{20{instruction[31]}}, instruction[31:20]};  // I-type
-            OP_STORE: 
-                imm = {{20{instruction[31]}}, instruction[31:25], instruction[11:7]};  // S-type
-            OP_BRANCH: 
-                imm = {{19{instruction[31]}}, instruction[31], instruction[7], 
-                       instruction[30:25], instruction[11:8], 1'b0};  // B-type
-            OP_LUI, OP_AUIPC: 
-                imm = {instruction[31:12], 12'b0};  // U-type
-            OP_JAL: 
-                imm = {{11{instruction[31]}}, instruction[31], instruction[19:12], 
-                       instruction[20], instruction[30:21], 1'b0};  // J-type
-            default: imm = 0;
-        endcase
+        // 初始化为0（避免X态）
+        pc = 32'h0;
+        instruction = 32'h0;
+        cycle = 0;
+        
+        rd_we = 1'b0;
+        rd_addr = 5'h0;
+        rd_data = 32'h0;
+        
+        mem_read = 1'b0;
+        mem_write = 1'b0;
+        mem_addr = 32'h0;
+        mem_wdata = 32'h0;
+        mem_rdata = 32'h0;
+        
+        is_branch = 1'b0;
+        branch_taken = 1'b0;
+        branch_target = 32'h0;
+        
+        exception_occurred = 1'b0;
+        exception_cause = 4'h0;
+        exception_tval = 32'h0;
     endfunction
     
-endclass : cpu_seq_item
+    // ========================================================================
+    // UVM Field Macros（用于打印、复制、比较）
+    // ========================================================================
+    `uvm_object_utils_begin(cpu_seq_item)
+        // 基本信息
+        `uvm_field_int(pc, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(instruction, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(cycle, UVM_ALL_ON | UVM_DEC)
+        
+        // 寄存器
+        `uvm_field_int(rd_we, UVM_ALL_ON)
+        `uvm_field_int(rd_addr, UVM_ALL_ON | UVM_DEC)
+        `uvm_field_int(rd_data, UVM_ALL_ON | UVM_HEX)
+        
+        // 内存
+        `uvm_field_int(mem_read, UVM_ALL_ON)
+        `uvm_field_int(mem_write, UVM_ALL_ON)
+        `uvm_field_int(mem_addr, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(mem_wdata, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(mem_rdata, UVM_ALL_ON | UVM_HEX)
+        
+        // 分支
+        `uvm_field_int(is_branch, UVM_ALL_ON)
+        `uvm_field_int(branch_taken, UVM_ALL_ON)
+        `uvm_field_int(branch_target, UVM_ALL_ON | UVM_HEX)
+        
+        // 异常
+        `uvm_field_int(exception_occurred, UVM_ALL_ON)
+        `uvm_field_int(exception_cause, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(exception_tval, UVM_ALL_ON | UVM_HEX)
+        
+        // CSR
+        `uvm_field_int(csr_read, UVM_ALL_ON)
+        `uvm_field_int(csr_write, UVM_ALL_ON)
+        `uvm_field_int(csr_addr, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(csr_wdata, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(csr_rdata, UVM_ALL_ON | UVM_HEX)
+    `uvm_object_utils_end
+    
+    // ========================================================================
+    // 辅助函数：将item转换为Spike格式的trace字符串
+    // ========================================================================
+    function string to_trace_string();
+        string mnemonic;
+        string trace_str;
+        
+        // 获取指令助记符
+        mnemonic = cpu_get_mnemonic(instruction);
+        
+        // 主trace行：core   0: 0xPC (0xINSTR) MNEMONIC
+        trace_str = $sformatf("core   0: 0x%08h (0x%08h) %s", pc, instruction, mnemonic);
+        
+        // 寄存器写入：3 0xPC (0xREG) xREG 0xVALUE
+        if (rd_we && rd_addr != 0) begin
+            trace_str = {trace_str, $sformatf("\n3 0x%08h (0x%02x) x%-2d 0x%08h", 
+                                             pc, rd_addr, rd_addr, rd_data)};
+        end
+        
+        return trace_str;
+    endfunction
+    
+    // ========================================================================
+    // 辅助函数：打印简短信息（调试用）
+    // ========================================================================
+    function string convert2string();
+        string mnemonic = cpu_get_mnemonic(instruction);
+        return $sformatf("[%0d] PC=0x%08h %s", cycle, pc, mnemonic);
+    endfunction
+    
+    // ========================================================================
+    // 辅助函数：判断指令类型
+    // ========================================================================
+    function bit is_load_instr();
+        logic [6:0] opcode = instruction[6:0];
+        return (opcode == 7'b0000011);  // LOAD
+    endfunction
+    
+    function bit is_store_instr();
+        logic [6:0] opcode = instruction[6:0];
+        return (opcode == 7'b0100011);  // STORE
+    endfunction
+    
+    function bit is_branch_instr();
+        logic [6:0] opcode = instruction[6:0];
+        return (opcode == 7'b1100011);  // BRANCH
+    endfunction
+    
+    function bit is_jal_instr();
+        logic [6:0] opcode = instruction[6:0];
+        return (opcode == 7'b1101111);  // JAL
+    endfunction
+    
+    function bit is_jalr_instr();
+        logic [6:0] opcode = instruction[6:0];
+        return (opcode == 7'b1100111);  // JALR
+    endfunction
+    
+endclass
 
 `endif

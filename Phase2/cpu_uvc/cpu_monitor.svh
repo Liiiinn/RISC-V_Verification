@@ -3,25 +3,25 @@
 
 import uvm_pkg::*;
 `include "uvm_macros.svh"
-import common::*;
 
 class cpu_monitor extends uvm_monitor;
-    
     `uvm_component_utils(cpu_monitor)
     
+    // ===== 配置和接口 =====
     cpu_config m_config;
+    virtual cpu_if vif;
+    
+    // ===== 分析端口（唯一输出）=====
     uvm_analysis_port #(cpu_seq_item) analysis_port;
     
-    // 统计信息
-    int instr_count;
-    int branch_count;
-    int load_count;
-    int store_count;
-    int alu_count;
+    // ===== 统计信息 =====
+    longint transaction_count;
+    longint stall_cycles;        // 
     
     function new(string name = "cpu_monitor", uvm_component parent = null);
         super.new(name, parent);
-        analysis_port = new("analysis_port", this);
+        transaction_count = 0;
+        stall_cycles = 0;
     endfunction
     
     virtual function void build_phase(uvm_phase phase);
@@ -31,118 +31,166 @@ class cpu_monitor extends uvm_monitor;
             `uvm_fatal(get_name(), "Cannot get cpu_config!")
         end
         
-        instr_count = 0;
-        branch_count = 0;
-        load_count = 0;
-        store_count = 0;
-        alu_count = 0;
+        if (m_config.vif == null) begin
+            `uvm_fatal(get_name(), "Virtual interface in config is NULL!")
+        end
         
-        `uvm_info(get_name(), "CPU monitor built", UVM_MEDIUM)
+        vif = m_config.vif;
+        analysis_port = new("analysis_port", this);
+        
+        `uvm_info(get_name(), "Monitor build phase completed", UVM_HIGH)
     endfunction
     
+    // ========================================================================
+    // Run Phase - 监控DUT执行（唯一采集点）
+    // ========================================================================
     virtual task run_phase(uvm_phase phase);
-        cpu_seq_item item;
-        logic [31:0] prev_pc = 32'hFFFFFFFF;
+        phase.raise_objection(this);
         
-        `uvm_info(get_name(), "CPU monitor starting", UVM_LOW)
+        // 等待复位完成
+        @(posedge vif.rstn);
+        `uvm_info(get_name(), "Monitor started, waiting for instructions...", UVM_MEDIUM)
+        
+        fork
+            // 主监控循环
+            monitor_execution();
+            
+            // 超时监控
+            timeout_monitor();
+        join_any
+        disable fork;
+        
+        phase.drop_objection(this);
+    endtask
+    
+    // ========================================================================
+    // 监控DUT执行（核心功能）
+    // ========================================================================
+    virtual task monitor_execution();
+        cpu_seq_item item;
+        logic [31:0] prev_pc;
+        logic [31:0] prev_instr;
+        
+        prev_pc = 32'hFFFFFFFF;  // 初始化为无效值
+        prev_instr = 32'h0;
         
         forever begin
-            wait(m_config.m_vif.rstn);
+            @(posedge vif.clk);
             
-            while(m_config.m_vif.rstn) begin
-                @(m_config.m_vif.monitor_cb);
+            //  统计流水线停顿
+            if (!vif.debug_retired) begin
+                stall_cycles++;
+            end
+            
+            // 检测指令提交
+            if (vif.debug_retired && !vif.debug_flush) begin
                 
-                item = cpu_seq_item::type_id::create("item");
-                item.timestamp = $time;
-                
-                // 采样PC和指令
-                item.pc = m_config.m_vif.monitor_cb.debug_pc;
-                item.instruction = m_config.m_vif.monitor_cb.debug_instruction;
-                
-                // 检测有效指令执行
-                if (item.pc != prev_pc && 
-                    !m_config.m_vif.monitor_cb.debug_stall && 
-                    !m_config.m_vif.monitor_cb.debug_flush &&
-                    item.pc != 0) begin
+                // 避免重复采集
+                if (vif.debug_pc != prev_pc || vif.debug_instruction != prev_instr) begin
                     
-                    // 解码指令
-                    item.decode_instruction();
+                    // 创建transaction item
+                    item = cpu_seq_item::type_id::create("item");
                     
-                    instr_count++;
+                    //  采集基本信息
+                    item.pc = vif.debug_pc;
+                    item.instruction = vif.debug_instruction;
+                    item.cycle = vif.cycle_count;
                     
-                    // 采样寄存器数据
-                    if (item.rs1 != 0) 
-                        item.rs1_data = m_config.m_vif.monitor_cb.debug_reg_file[item.rs1];
-                    if (item.rs2 != 0) 
-                        item.rs2_data = m_config.m_vif.monitor_cb.debug_reg_file[item.rs2];
+                    // 寄存器写入
+                    item.rd_we = vif.debug_rd_we;
+                    item.rd_addr = vif.debug_rd_addr;
+                    item.rd_data = vif.debug_rd_data;
                     
-                    // 采样内存访问
-                    if (m_config.m_vif.monitor_cb.dmem_we) begin
-                        item.mem_access = 1;
-                        item.mem_write = 1;
-                        item.mem_addr = m_config.m_vif.monitor_cb.dmem_addr;
-                        item.mem_data = m_config.m_vif.monitor_cb.dmem_wdata;
-                        item.mem_be = m_config.m_vif.monitor_cb.dmem_be;
-                        store_count++;
-                    end else if (item.opcode == OP_LOAD) begin
-                        item.mem_access = 1;
-                        item.mem_write = 0;
-                        item.mem_addr = m_config.m_vif.monitor_cb.dmem_addr;
-                        item.mem_data = m_config.m_vif.monitor_cb.dmem_rdata;
-                        load_count++;
+                    // 内存访问
+                    item.mem_read = vif.debug_mem_read;
+                    item.mem_write = vif.debug_mem_write;
+                    item.mem_addr = vif.debug_mem_addr;
+                    item.mem_wdata = vif.debug_mem_wdata;
+                    item.mem_rdata = vif.debug_mem_rdata;
+                    
+                    // 分支信息
+                    item.is_branch = vif.debug_is_branch;
+                    item.branch_taken = vif.debug_branch_taken;
+                    item.branch_target = vif.debug_branch_target;
+                    
+                    // ：PC跳跃检测
+                    if (transaction_count > 0 && prev_pc != 32'hFFFFFFFF) begin
+                        if ((vif.debug_pc != prev_pc + 4) && 
+                            !item.is_branch && 
+                            !item.exception_occurred) begin
+                            `uvm_warning(get_name(), 
+                                $sformatf("Unexpected PC jump: 0x%08h -> 0x%08h", 
+                                         prev_pc, vif.debug_pc))
+                        end
                     end
                     
-                    // 采样分支信息
-                    if (m_config.m_vif.monitor_cb.debug_is_bj) begin
-                        item.is_branch = 1;
-                        item.branch_taken = (item.pc != prev_pc + 4);
-                        branch_count++;
-                    end
-                    
-                    // 统计ALU指令
-                    if (item.opcode == OP_REG || item.opcode == OP_IMM) begin
-                        alu_count++;
-                    end
-                    
-                    if (m_config.verbose_monitor) begin
-                        `uvm_info(get_name(), 
-                                 $sformatf("[%0t] PC=0x%08h, %s, #%0d", 
-                                          $time, item.pc, item.get_instruction_name(), 
-                                          instr_count), 
-                                 UVM_MEDIUM)
-                    end
-                    
-                    // 发送到分析端口
+                    //  发送到所有订阅者
                     analysis_port.write(item);
                     
-                    prev_pc = item.pc;
+                    transaction_count++;
+                    prev_pc = vif.debug_pc;
+                    prev_instr = vif.debug_instruction;
+                    
+                    //  改进：定期打印进度
+                    if (m_config.verbose_logging) begin
+                        if (transaction_count % 1000 == 0) begin
+                            real cpi = real'(vif.cycle_count) / real'(transaction_count);
+                            `uvm_info(get_name(), 
+                                $sformatf("Progress: %0d instructions, %0d cycles, CPI=%.2f", 
+                                         transaction_count, vif.cycle_count, cpi), UVM_MEDIUM)
+                        end
+                    end
                 end
             end
             
-            `uvm_info(get_name(), "Reset detected", UVM_HIGH)
-            prev_pc = 32'hFFFFFFFF;
+            // 程序结束检测
+            if (vif.program_finished) begin
+                `uvm_info(get_name(), 
+                    $sformatf("✓ Program finished at cycle %0d, captured %0d transactions", 
+                             vif.cycle_count, transaction_count), UVM_LOW)
+                break;
+            end
         end
     endtask
     
+    // ========================================================================
+    // 超时监控
+    // ========================================================================
+    virtual task timeout_monitor();
+        if (m_config.enable_timeout) begin
+            repeat (m_config.max_cycles) @(posedge vif.clk);
+            `uvm_error(get_name(), 
+                $sformatf("Monitor timeout after %0d cycles! Captured %0d transactions.", 
+                         m_config.max_cycles, transaction_count))
+        end
+    endtask
+    
+    // ========================================================================
+    // Report Phase
+    // ========================================================================
     virtual function void report_phase(uvm_phase phase);
         super.report_phase(phase);
         
-        `uvm_info(get_name(), "===========================================", UVM_NONE)
-        `uvm_info(get_name(), "       CPU MONITOR STATISTICS", UVM_NONE)
-        `uvm_info(get_name(), "===========================================", UVM_NONE)
-        `uvm_info(get_name(), $sformatf("Total Instructions: %0d", instr_count), UVM_NONE)
-        `uvm_info(get_name(), $sformatf("  ALU Instructions: %0d", alu_count), UVM_NONE)
-        `uvm_info(get_name(), $sformatf("  Branches:         %0d", branch_count), UVM_NONE)
-        `uvm_info(get_name(), $sformatf("  Loads:            %0d", load_count), UVM_NONE)
-        `uvm_info(get_name(), $sformatf("  Stores:           %0d", store_count), UVM_NONE)
-        `uvm_info(get_name(), $sformatf("Total Cycles:       %0d", m_config.m_vif.cycle_count), UVM_NONE)
-        if (instr_count > 0) begin
-            real cpi = real'(m_config.m_vif.cycle_count) / real'(instr_count);
-            `uvm_info(get_name(), $sformatf("CPI:                %.2f", cpi), UVM_NONE)
+        `uvm_info(get_name(), "==========================================", UVM_LOW)
+        `uvm_info(get_name(), "    Monitor Statistics", UVM_LOW)
+        `uvm_info(get_name(), "==========================================", UVM_LOW)
+        `uvm_info(get_name(), $sformatf("Transactions captured: %0d", transaction_count), UVM_LOW)
+        `uvm_info(get_name(), $sformatf("Total cycles:          %0d", vif.cycle_count), UVM_LOW)
+        `uvm_info(get_name(), $sformatf("Stall cycles:          %0d", stall_cycles), UVM_LOW)
+        
+        if (transaction_count > 0 && vif.cycle_count > 0) begin
+            real cpi = real'(vif.cycle_count) / real'(transaction_count);
+            real ipc = real'(transaction_count) / real'(vif.cycle_count);
+            real stall_rate = 100.0 * real'(stall_cycles) / real'(vif.cycle_count);
+            
+            `uvm_info(get_name(), $sformatf("CPI:                   %.3f", cpi), UVM_LOW)
+            `uvm_info(get_name(), $sformatf("IPC:                   %.3f", ipc), UVM_LOW)
+            `uvm_info(get_name(), $sformatf("Stall rate:            %.1f%%", stall_rate), UVM_LOW)
         end
-        `uvm_info(get_name(), "===========================================", UVM_NONE)
+        
+        `uvm_info(get_name(), "==========================================", UVM_LOW)
     endfunction
     
-endclass : cpu_monitor
+endclass
 
 `endif
