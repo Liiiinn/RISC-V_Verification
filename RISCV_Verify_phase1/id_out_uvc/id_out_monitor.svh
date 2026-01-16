@@ -24,7 +24,7 @@ class id_out_monitor extends uvm_monitor;
         super.build_phase(phase);
         
         // Get config from config_db
-        if (!uvm_config_db#(id_out_config)::get(this, "", "id_out_config", m_config)) begin
+        if (!uvm_config_db#(id_out_config)::get(this, "", "config", m_config)) begin
             `uvm_fatal(get_name(), "Cannot get id_out_config from config_db!")
         end
     endfunction

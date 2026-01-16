@@ -33,6 +33,8 @@ class tb_env extends uvm_env;
     // reference model
     id_ref_model    m_id_ref_model;
 
+    uvm_event end_of_stimulus_ev;
+
     //------------------------------------------------------------------------------
     // Creates and initializes an instance of this class using the normal
     // constructor arguments for uvm_component.
@@ -51,8 +53,9 @@ class tb_env extends uvm_env;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         // Build all TB VC's
-        uvm_config_db #(clk_config)::set(this,"m_clk_agent*","m_clk_config", m_top_config.m_clk_config); // 将在clk_agent的build_phase中get
+        uvm_config_db #(clk_config)::set(this,"m_clk_agent*","config", m_top_config.m_clk_config); // 将在clk_agent的build_phase中get
         m_clk_agent = clk_agent::type_id::create("m_clk_agent",this);
+        uvm_config_db #(clk_config)::set(this,"m_id_scoreboard","config", m_top_config.m_clk_config);
         uvm_config_db #(rstn_config)::set(this,"m_rstn_agent*","config", m_top_config.m_rstn_config);
         m_rstn_agent = rstn_agent::type_id::create("m_rstn_agent",this);
         uvm_config_db #(id_out_config)::set(this,"m_id_out_agent*","config", m_top_config.m_id_out_config);
@@ -63,8 +66,10 @@ class tb_env extends uvm_env;
         m_id_scoreboard = id_scoreboard::type_id::create("m_id_scoreboard",this);
         // Build reference model
         m_id_ref_model = id_ref_model::type_id::create("m_id_ref_model", this);
+        end_of_stimulus_ev = new("end_of_stimulus_ev");
+        uvm_config_db#(uvm_event)::set(this, "m_id_scoreboard","end_of_stimulus_ev", end_of_stimulus_ev);
     endfunction : build_phase
-
+   
     //------------------------------------------------------------------------------
     // This function is used to connection the uVC monitor analysis ports to the scoreboard
     //------------------------------------------------------------------------------
@@ -78,6 +83,20 @@ class tb_env extends uvm_env;
         m_id_ref_model.id_ref_ap.connect(m_id_scoreboard.m_exp_id_out_ap);
         // Connect id_agent monitor to reference model
         m_id_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.analysis_imp);
+        m_rstn_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.rstn_imp);
     endfunction : connect_phase
+
+    virtual task run_phase(uvm_phase phase);
+        phase.raise_objection(this);
+        `uvm_info(get_name(), "tb_env run_phase started", UVM_MEDIUM);
+        // 等待 test / sequence 结束
+        phase.wait_for_state(UVM_PHASE_READY_TO_END);
+        `uvm_info(get_name(), "All stimulus finished, triggering end_of_stimulus_ev", UVM_MEDIUM);
+        end_of_stimulus_ev.trigger();
+        // 等 scoreboard drain 队列
+        repeat (5) @(posedge m_top_config.m_clk_config.m_if.clk);
+        phase.drop_objection(this);
+    endtask
+
 
 endclass : tb_env

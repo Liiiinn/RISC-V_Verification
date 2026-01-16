@@ -23,12 +23,12 @@ class id_out_agent extends uvm_agent;
         super.build_phase(phase);
         
         // Get config
-        if (!uvm_config_db#(id_out_config)::get(this, "", "id_out_config", m_config)) begin
+        if (!uvm_config_db#(id_out_config)::get(this, "", "config", m_config)) begin
             `uvm_fatal(get_name(), "Cannot get id_out_config from config_db!")
         end
         
         // Pass config to subcomponents
-        uvm_config_db#(id_out_config)::set(this, "m_monitor", "id_out_config", m_config);
+        uvm_config_db#(id_out_config)::set(this, "m_monitor", "m_config", m_config);
         
         // Create monitor (only monitor, no driver/sequencer)
         if (m_config.has_monitor) begin

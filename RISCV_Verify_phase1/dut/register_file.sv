@@ -37,7 +37,7 @@ module register_file(
     end
 
 
-    assign read1_data = (read1_id == 0) ?0 : 
+    assign read1_data = (read1_id == 0) ? 0 : 
 			(read1_id == write_id) ? write_data:
 			    registers[read1_id];
     assign read2_data = (read2_id == 0) ? 0 :

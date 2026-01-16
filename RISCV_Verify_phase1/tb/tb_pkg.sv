@@ -5,7 +5,7 @@ package tb_pkg;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
     `include "clk_config.svh"
-    `include "clk_driver.svh"
+    // `include "clk_driver.svh"
     `include "clk_agent.svh"
 
     `include "rstn_config.svh"

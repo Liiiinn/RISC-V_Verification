@@ -7,21 +7,32 @@ class clk_driver extends uvm_driver;
 	clk_config m_config;
 	function new(string name = "clk_dirver", uvm_component parant = null);
 		super.new(name, parant);
-		if(!uvm_config_db #(clk_config)::get(this, "", "m_config", m_config)) begin
-			`uvm_fatal(get_name(), "Cannot find the VC configuration!")
-		end
 	endfunction 
 
     function void build_phase(uvm_phase phase);
       	super.build_phase(phase);
+		if(!uvm_config_db #(clk_config)::get(this, "", "clk_config", m_config)) begin
+			`uvm_fatal(get_name(), "Cannot find the VC configuration!")
+		end
     endfunction : build_phase
 
     virtual task run_phase(uvm_phase phase);
+	    int counter = 0;
         `uvm_info(get_name(), $sformatf("Clock Driver is running with clock period: %0d ns", m_config.clk_period), UVM_MEDIUM)
-        m_config.m_if.clk <= 0;
+        // phase.raise_objection(this);
+		//
+
+    	`uvm_info(get_name(), "Clock driver starting to toggle clock", UVM_LOW)
+		m_config.m_if.clk <= 0;
+		
         forever begin
         	#(m_config.clk_period/2);
+			// #(100/2);
             m_config.m_if.clk <= ~m_config.m_if.clk;
+			counter++;
+			// 
+        	if (counter % 10 == 0)
+            `uvm_info(get_name(), $sformatf("Counter :%0d", counter), UVM_LOW)
         end
     endtask : run_phase
 
