@@ -253,27 +253,27 @@ class id_scoreboard extends uvm_component;
 
         opcode_jumpr_cross : cross opcode_cp,jumpr_cp{
             bins jalr_correct = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_1);
-            // bins jalr_wrong = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_0);
+            bins jalr_wrong = binsof(opcode_cp.I_type_JALR) && binsof(jumpr_cp.is_jumpr_0);
         }
         opcode_jump_cross  : cross opcode_cp,jump_cp{
             bins jal_correct = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_1);
-            // bins jal_wrong = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_0);
+            bins jal_wrong = binsof(opcode_cp.J_type) && binsof(jump_cp.is_jump_0);
         }
         opcode_branch_cross: cross opcode_cp,branch_cp{
             bins branch_correct = binsof(opcode_cp.B_type) && binsof(branch_cp.is_branch_1);
-            // bins branch_wrong = binsof(opcode_cp.B_type) && binsof(branch_cp.is_branch_0);
+            bins branch_wrong = binsof(opcode_cp.B_type) && binsof(branch_cp.is_branch_0);
         }
         opcode_r_write_cross : cross opcode_cp,reg_write_cp{
             bins r_write_correct = binsof(opcode_cp.R_type) && binsof(reg_write_cp.reg_write_1);
-            // bins r_write_wrong = binsof(opcode_cp.R_type) && binsof(reg_write_cp.reg_write_0);
+            bins r_write_wrong = binsof(opcode_cp.R_type) && binsof(reg_write_cp.reg_write_0);
         }
         opcode_s_memwrite_cross : cross opcode_cp,mem_write_cp{
             bins memwrite_correct = binsof(opcode_cp.S_type) && binsof(mem_write_cp.mem_write_1);
-            // bins memwrite_wrong = binsof(opcode_cp.S_type) && binsof(mem_write_cp.mem_write_0);
+            bins memwrite_wrong = binsof(opcode_cp.S_type) && binsof(mem_write_cp.mem_write_0);
         }
         opcode_s_memread_cross : cross opcode_cp,mem_read_cp{
             bins memread_correct = binsof(opcode_cp.I_type_load) && binsof(mem_read_cp.mem_read_1);
-            // bins memread_wrong = binsof(opcode_cp.I_type_load) && binsof(mem_read_cp.mem_read_0);
+            bins memread_wrong = binsof(opcode_cp.I_type_load) && binsof(mem_read_cp.mem_read_0);
         }
         // write_cross        : cross write_enable_cp, write_id_cp{
         //     bins write_enabled = binsof(write_enable_cp.write) && binsof(write_id_cp.id_0);
