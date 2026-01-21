@@ -5,7 +5,7 @@ import uvm_pkg::*;
 `include "uvm_macros.svh"
 
 class cpu_seq_item extends uvm_sequence_item;
-    `uvm_object_utils(cpu_seq_item)
+    // Remove `uvm_object_utils here, will use `uvm_object_utils_begin later
     
     // ========================================================================
     // 基本执行信息
@@ -45,13 +45,13 @@ class cpu_seq_item extends uvm_sequence_item;
     logic [31:0] exception_tval;     // 异常值（trap value）
     
     // ========================================================================
-    // CSR访问信息（可选）
+    // Coverage相关信息（从DUT采样）
     // ========================================================================
-    bit          csr_read;           // CSR读标志
-    bit          csr_write;          // CSR写标志
-    logic [11:0] csr_addr;           // CSR地址
-    logic [31:0] csr_wdata;          // CSR写数据
-    logic [31:0] csr_rdata;          // CSR读数据
+    logic [4:0]  alu_op;             // ALU操作类型（来自control_type）
+    bit          alu_src;            // ALU源选择（立即数/寄存器）
+    bit          hazard;             // 冒险检测标志
+    bit          stall;              // 流水线停顿标志
+    bit          PC_stall;           // PC停顿标志
     
     // ========================================================================
     // Constructor
@@ -81,6 +81,12 @@ class cpu_seq_item extends uvm_sequence_item;
         exception_occurred = 1'b0;
         exception_cause = 4'h0;
         exception_tval = 32'h0;
+        
+        alu_op = 5'h0;
+        alu_src = 1'b0;
+        hazard = 1'b0;
+        stall = 1'b0;
+        PC_stall = 1'b0;
     endfunction
     
     // ========================================================================
@@ -114,12 +120,12 @@ class cpu_seq_item extends uvm_sequence_item;
         `uvm_field_int(exception_cause, UVM_ALL_ON | UVM_HEX)
         `uvm_field_int(exception_tval, UVM_ALL_ON | UVM_HEX)
         
-        // CSR
-        `uvm_field_int(csr_read, UVM_ALL_ON)
-        `uvm_field_int(csr_write, UVM_ALL_ON)
-        `uvm_field_int(csr_addr, UVM_ALL_ON | UVM_HEX)
-        `uvm_field_int(csr_wdata, UVM_ALL_ON | UVM_HEX)
-        `uvm_field_int(csr_rdata, UVM_ALL_ON | UVM_HEX)
+        // Coverage相关
+        `uvm_field_int(alu_op, UVM_ALL_ON | UVM_HEX)
+        `uvm_field_int(alu_src, UVM_ALL_ON)
+        `uvm_field_int(hazard, UVM_ALL_ON)
+        `uvm_field_int(stall, UVM_ALL_ON)
+        `uvm_field_int(PC_stall, UVM_ALL_ON)
     `uvm_object_utils_end
     
     // ========================================================================

@@ -31,6 +31,9 @@ class cpu_driver extends uvm_driver #(cpu_seq_item);
     endfunction
     
     virtual task run_phase(uvm_phase phase);
+        string file_ext;
+        int ext_pos;
+        
         phase.raise_objection(this);
         
         // 等待复位完成
@@ -38,24 +41,38 @@ class cpu_driver extends uvm_driver #(cpu_seq_item);
         @(posedge vif.rstn);
         repeat (5) @(posedge vif.clk);
         
-        // 加载程序到DUT
-        if (m_config.batch_mode) begin
-            `uvm_info(get_name(), 
-                $sformatf("[Test %0d/%0d] Loading ELF: %s", 
-                    m_config.test_index + 1, m_config.total_tests, m_config.test_elf_path), 
-                UVM_LOW)
-        end else begin
-            `uvm_info(get_name(), $sformatf("Loading ELF: %s", m_config.test_elf_path), UVM_LOW)
+        // 检查文件类型 - 如果是.mem文件，跳过driver加载（由tb_top通过$readmemh加载）
+        ext_pos = 0;
+        for (int i = 0; i < m_config.test_elf_path.len(); i++) begin
+            if (m_config.test_elf_path[i] == ".") ext_pos = i;
         end
+        file_ext = m_config.test_elf_path.substr(ext_pos, m_config.test_elf_path.len()-1);
         
-        // 加载ELF到DUT内存
-        load_elf_to_memory(m_config.test_elf_path);
-        
-        // 打印加载统计
-        `uvm_info(get_name(), 
-            $sformatf("✓ Program loaded: %0d bytes [0x%08h - 0x%08h]", 
-                bytes_loaded, load_start_addr, load_end_addr), 
-            UVM_LOW)
+        if (file_ext == ".mem") begin
+            `uvm_info(get_name(), 
+                $sformatf("MEM file detected: %s (loaded by tb_top via $readmemh)", 
+                    m_config.test_elf_path), UVM_LOW)
+            bytes_loaded = 0;  // 统计信息未知，由tb_top处理
+        end else begin
+            // 加载程序到DUT
+            if (m_config.batch_mode) begin
+                `uvm_info(get_name(), 
+                    $sformatf("[Test %0d/%0d] Loading ELF: %s", 
+                        m_config.test_index + 1, m_config.total_tests, m_config.test_elf_path), 
+                    UVM_LOW)
+            end else begin
+                `uvm_info(get_name(), $sformatf("Loading ELF: %s", m_config.test_elf_path), UVM_LOW)
+            end
+            
+            // 加载ELF到DUT内存
+            load_elf_to_memory(m_config.test_elf_path);
+            
+            // 打印加载统计
+            `uvm_info(get_name(), 
+                $sformatf("✓ Program loaded: %0d bytes [0x%08h - 0x%08h]", 
+                    bytes_loaded, load_start_addr, load_end_addr), 
+                UVM_LOW)
+        end
         
         phase.drop_objection(this);
     endtask

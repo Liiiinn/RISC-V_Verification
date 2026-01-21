@@ -34,37 +34,37 @@ endfunction
 
 // 检查是否为LOAD指令
 function bit cpu_is_load(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b0000011); // LOAD opcode
 endfunction
 
 // 检查是否为STORE指令
 function bit cpu_is_store(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b0100011); // STORE opcode
 endfunction
 
 // 检查是否为BRANCH指令
 function bit cpu_is_branch(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b1100011); // BRANCH opcode
 endfunction
 
 // 检查是否为JAL指令
 function bit cpu_is_jal(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b1101111); // JAL opcode
 endfunction
 
 // 检查是否为JALR指令
 function bit cpu_is_jalr(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b1100111); // JALR opcode
 endfunction
 
 // 检查是否为算术指令（R-type或I-type ALU）
 function bit cpu_is_arithmetic(input logic [31:0] instruction);
-    logic [6:0] opcode = instruction[6:0];
+    automatic logic [6:0] opcode = instruction[6:0];
     return (opcode == 7'b0110011 || opcode == 7'b0010011);
 endfunction
 
@@ -173,7 +173,7 @@ endfunction
 
 // 获取完整的指令信息（含操作数解析，可选）
 function string cpu_get_instr_info(input logic [31:0] instruction);
-    string mnem = cpu_get_mnemonic(instruction);
+    automatic string mnem = cpu_get_mnemonic(instruction);
     logic [4:0] rd, rs1, rs2;
     logic [11:0] imm_i;
     
@@ -204,14 +204,14 @@ task cpu_print_instruction(
     input logic [31:0] pc,
     input logic [31:0] instruction
 );
-    string instr_mnem = cpu_get_mnemonic(instruction);
+    automatic string instr_mnem = cpu_get_mnemonic(instruction);
     $display("[%0t] PC=0x%08h INSTR=0x%08h (%s)", 
              $time, pc, instruction, instr_mnem);
 endtask
 
 // 打印当前执行状态（详细版）
 task cpu_print_execution_state(virtual cpu_if vif);
-    string instr_mnem = cpu_get_mnemonic(vif.debug_instruction);
+    automatic string instr_mnem = cpu_get_mnemonic(vif.debug_instruction);
     
     $display("[%0t] Cycle=%0d PC=0x%08h INSTR=0x%08h (%s)", 
              $time, vif.cycle_count, vif.debug_pc, vif.debug_instruction, instr_mnem);
@@ -286,7 +286,7 @@ task cpu_print_memory(
     $display("\n========== Memory [0x%08h - 0x%08h] ==========", start_addr, end_addr);
     
     for (addr = start_addr; addr <= end_addr; addr += 4) begin
-        logic [31:0] data = cpu_get_memory(vif, addr);
+        automatic logic [31:0] data = cpu_get_memory(vif, addr);
         if (data != 0) begin
             $display("[0x%08h] = 0x%08h", addr, data);
         end

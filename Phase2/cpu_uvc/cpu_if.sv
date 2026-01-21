@@ -19,12 +19,10 @@ interface cpu_if(input logic clk, input logic rstn);
     
     // ===== DUT直接输出的调试信号（从端口连接）=====
     logic debug_flush;                 // 流水线刷新（DUT端口）
-    logic debug_is_branch;             // 分支/跳转指令（DUT端口）
-    logic debug_branch_taken;          // 分支是否跳转（DUT端口）
-    logic [31:0] debug_branch_target;  // 分支目标地址（DUT端口）
+    logic debug_is_bj;                 // 分支/跳转指令（DUT端口）
     logic debug_exception;             // 异常标志（DUT端口）
     logic [31:0] debug_reg[0:31];      // 32个通用寄存器（DUT端口）
-    logic [31:0] ram_debug[1024];      // 数据内存调试访问（DUT端口）
+    logic [31:0] ram_debug[32];        // 数据内存调试访问（DUT端口 - DATA_RAM_DEPTH/4 = 128/4 = 32）
     
     // ===== 通过层次化路径采样的内部信号 =====
     // 这些信号从DUT内部读取，无需修改DUT端口
@@ -33,6 +31,10 @@ interface cpu_if(input logic clk, input logic rstn);
     logic [31:0] debug_pc;             // 当前PC（从fetch_stage采样）
     logic [31:0] debug_instruction;    // 当前指令（从IF/ID采样）
     logic [31:0] debug_next_pc;        // 下一个PC
+    
+    // 分支信号（层次化采样）
+    logic        debug_branch_taken;   // 分支是否跳转（从execute_stage采样）
+    logic [31:0] debug_branch_target;  // 分支目标地址（从execute_stage采样）
     
     // 流水线寄存器（层次化采样）
     logic [31:0] debug_if_id_pc;       // IF/ID流水线寄存器PC
@@ -66,6 +68,7 @@ interface cpu_if(input logic clk, input logic rstn);
     logic        program_finished;     // 程序完成标志
     logic [31:0] finish_pc;            // 结束PC地址（可配置）
     logic [31:0] finish_instruction;   // 结束指令码（如EBREAK: 0x00100073）
+    logic [15:0] no_retire_count;      // 连续无retire的周期计数
     
     // ===== 性能计数器（自动维护）=====
     longint unsigned cycle_count;      // 总周期数
@@ -99,10 +102,11 @@ interface cpu_if(input logic clk, input logic rstn);
     clocking monitor_cb @(posedge clk);
         default input #1ns;
         // DUT端口信号
-        input debug_flush, debug_is_branch, debug_branch_taken, debug_branch_target, debug_exception;
+        input debug_flush, debug_is_bj, debug_exception;
         input debug_reg, ram_debug;
         // 层次化采样信号
         input debug_pc, debug_instruction, debug_next_pc;
+        input debug_branch_taken, debug_branch_target;
         input debug_if_id_pc, debug_if_id_instruction;
         input debug_id_ex_pc, debug_ex_mem_pc, debug_mem_wb_pc;
         input debug_stall, debug_PC_stall, debug_hazard;
@@ -110,7 +114,8 @@ interface cpu_if(input logic clk, input logic rstn);
         input debug_mem_addr, debug_mem_wdata, debug_mem_rdata;
         input debug_rd_addr, debug_rd_data, debug_rd_we;
         input debug_valid, debug_retired;
-        input program_finished;
+        // Remove internal generated signals from clocking block
+        // program_finished, cycle_count, etc. are accessed directly
     endclocking
     
     // ============================================================================
@@ -140,7 +145,7 @@ interface cpu_if(input logic clk, input logic rstn);
     
     // 指令提交信号 = 有效指令提交到WB阶段
     // 判断条件：有寄存器写回 或 有内存写入 或 是分支/跳转指令且PC有变化
-    assign debug_retired = debug_valid && (debug_rd_we || debug_mem_write || debug_is_branch);
+    assign debug_retired = debug_valid && (debug_rd_we || debug_mem_write || debug_is_bj);
     
     // ============================================================================
     // 自动计数器逻辑
@@ -171,7 +176,7 @@ interface cpu_if(input logic clk, input logic rstn);
         if (!rstn) begin
             branch_count <= 0;
         end else begin
-            if (debug_is_branch && debug_retired) begin
+            if (debug_is_bj && debug_retired) begin
                 branch_count <= branch_count + 1;
             end
         end
@@ -210,8 +215,9 @@ interface cpu_if(input logic clk, input logic rstn);
     always_ff @(posedge clk or negedge rstn) begin
         if (!rstn) begin
             program_finished <= 1'b0;
+            no_retire_count <= 16'h0;
         end else begin
-            // 检测方式1: EBREAK指令 (0x00100073)
+            // 检测方式1: EBREAK指令 (0x00100073) - DUT可能不支持，但保留检测
             if (debug_instruction == 32'h00100073 && debug_valid && debug_retired) begin
                 program_finished <= 1'b1;
             end
@@ -223,6 +229,15 @@ interface cpu_if(input logic clk, input logic rstn);
             // 避免初始化阶段误判，需要等足够周期后再检测
             else if ((debug_pc == 32'hFFFFFFFF) && (cycle_count > 100)) begin
                 program_finished <= 1'b1;
+            end
+            // 检测方式4: 连续100个周期无指令retired（程序可能卡死或结束）
+            else if (debug_retired && cycle_count > 10) begin
+                no_retire_count <= 16'h0;
+            end else if (cycle_count > 10 && no_retire_count < 16'hFFFF) begin
+                no_retire_count <= no_retire_count + 1;
+                if (no_retire_count >= 100) begin
+                    program_finished <= 1'b1;
+                end
             end
         end
     end
@@ -239,16 +254,10 @@ interface cpu_if(input logic clk, input logic rstn);
         enable_coverage = 1'b1;
         finish_pc = 32'h0;  // 0表示不使用PC检测结束，仅用EBREAK检测
         finish_instruction = 32'h00100073;  // EBREAK
-        program_finished = 1'b0;
+        // program_finished is set by always_ff, don't initialize here
         dut_path = "cpu_tb_top.dut";  // 默认DUT实例路径
         
-        // 初始化计数器
-        cycle_count = 0;
-        instr_count = 0;
-        branch_count = 0;
-        load_count = 0;
-        store_count = 0;
-        exception_count = 0;
+        // Counters are initialized by always_ff reset logic, don't initialize here
     end
     
 endinterface : cpu_if

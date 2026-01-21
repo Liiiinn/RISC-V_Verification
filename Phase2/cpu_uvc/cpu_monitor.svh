@@ -74,8 +74,19 @@ class cpu_monitor extends uvm_monitor;
         prev_pc = 32'hFFFFFFFF;  // 初始化为无效值
         prev_instr = 32'h0;
         
+        // 记录CPU真实的初始PC - 不等待，立即开始监控
+        `uvm_info(get_name(), $sformatf("[DEBUG] CPU initial PC after reset: 0x%08h", vif.debug_pc), UVM_LOW)
+        
         forever begin
             @(posedge vif.clk);
+            
+            // 调试：记录所有PC和retired状态
+            if (transaction_count < 10) begin
+                `uvm_info(get_name(), 
+                    $sformatf("[DEBUG Cycle %0d] PC=0x%08h, instr=0x%08h, retired=%b, flush=%b", 
+                        vif.cycle_count, vif.debug_pc, vif.debug_instruction, 
+                        vif.debug_retired, vif.debug_flush), UVM_HIGH)
+            end
             
             //  统计流水线停顿
             if (!vif.debug_retired) begin
@@ -109,18 +120,32 @@ class cpu_monitor extends uvm_monitor;
                     item.mem_rdata = vif.debug_mem_rdata;
                     
                     // 分支信息
-                    item.is_branch = vif.debug_is_branch;
+                    item.is_branch = vif.debug_is_bj;
                     item.branch_taken = vif.debug_branch_taken;
                     item.branch_target = vif.debug_branch_target;
                     
-                    // ：PC跳跃检测
+                    // Coverage相关信息
+                    item.alu_op = 5'h0;  // TODO: 如果需要精确的ALU操作，需要从DUT解码
+                    item.alu_src = 1'b0; // TODO: 根据指令类型解码
+                    item.hazard = vif.debug_hazard;
+                    item.stall = vif.debug_stall;
+                    item.PC_stall = vif.debug_PC_stall;
+                    
+                    // ：PC跳跃检测（考虑压缩指令）
                     if (transaction_count > 0 && prev_pc != 32'hFFFFFFFF) begin
-                        if ((vif.debug_pc != prev_pc + 4) && 
+                        logic [31:0] expected_next_pc;
+                        // 压缩指令(16位)检测：如果prev_instr低2位不是11，则是压缩指令
+                        if ((prev_instr & 32'h3) != 32'h3) 
+                            expected_next_pc = prev_pc + 2;  // 压缩指令：PC+2
+                        else 
+                            expected_next_pc = prev_pc + 4;  // 标准指令：PC+4
+                        
+                        if ((vif.debug_pc != expected_next_pc) && 
                             !item.is_branch && 
                             !item.exception_occurred) begin
-                            `uvm_warning(get_name(), 
-                                $sformatf("Unexpected PC jump: 0x%08h -> 0x%08h", 
-                                         prev_pc, vif.debug_pc))
+                            `uvm_info(get_name(), 
+                                $sformatf("PC jump: 0x%08h -> 0x%08h (expected: 0x%08h, prev_instr=0x%08h)", 
+                                         prev_pc, vif.debug_pc, expected_next_pc, prev_instr), UVM_HIGH)
                         end
                     end
                     

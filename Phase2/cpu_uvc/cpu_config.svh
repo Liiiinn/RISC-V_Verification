@@ -7,7 +7,7 @@ import uvm_pkg::*;
 `include "uvm_macros.svh"
 
 class cpu_config extends uvm_object;
-    `uvm_object_utils(cpu_config)
+    // Remove `uvm_object_utils here, will use `uvm_object_utils_begin later
     
     // ===== 虚拟接口 =====
     virtual cpu_if vif;
@@ -87,7 +87,7 @@ class cpu_config extends uvm_object;
         enable_timeout = 1'b1;
         
         // 超时配置
-        max_cycles = 10_000;            // 10000周期
+        max_cycles = 100_000;           // 增加到100k以观察更多执行
         max_instructions = 100_000;        // 100000指令
         max_stall_cycles = 1_000;          // 1K周期
         timeout_on_no_progress = 1'b1;
