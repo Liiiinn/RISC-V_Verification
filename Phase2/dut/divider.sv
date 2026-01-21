@@ -95,9 +95,9 @@ module divider (
                 end
 
                 CALC: begin
-                    int index = bit_cnt - 1;
-                    logic bit_in = (bit_cnt > 0) ? abs_dividend[index] : 1'b0;
-                    logic [XLEN_WIDTH:0] temp_calc = {remainder[XLEN_WIDTH-2:0], bit_in};
+                    automatic int index = bit_cnt - 1;
+                    automatic logic bit_in = (bit_cnt > 0) ? abs_dividend[index] : 1'b0;
+                    automatic logic [XLEN_WIDTH:0] temp_calc = {remainder[XLEN_WIDTH-2:0], bit_in};
                     if (temp_calc >= {1'b0, abs_divisor}) begin
                         quotient[index] <= 1'b1;
                         temp_calc = temp_calc - {1'b0, abs_divisor};
