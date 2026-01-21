@@ -11,7 +11,9 @@ class cpu_seq_item extends uvm_sequence_item;
     // 基本执行信息
     // ========================================================================
     logic [31:0] pc;                 // 程序计数器
-    logic [31:0] instruction;        // 指令编码
+    logic [31:0] instruction;        // 指令编码（解压后的32位）
+    logic [31:0] original_instruction; // 原始指令（压缩指令为16位）
+    bit          is_compressed;      // 是否为压缩指令
     longint      cycle;              // 周期计数
     
     // ========================================================================

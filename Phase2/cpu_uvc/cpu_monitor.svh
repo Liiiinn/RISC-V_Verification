@@ -105,6 +105,8 @@ class cpu_monitor extends uvm_monitor;
                     //  采集基本信息
                     item.pc = vif.debug_pc;
                     item.instruction = vif.debug_instruction;
+                    item.original_instruction = vif.debug_original_instr;
+                    item.is_compressed = vif.debug_is_compressed;
                     item.cycle = vif.cycle_count;
                     
                     // 寄存器写入

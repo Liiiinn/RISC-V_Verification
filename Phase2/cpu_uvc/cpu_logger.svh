@@ -82,15 +82,28 @@ class cpu_logger extends uvm_component;
         // 从monitor接收数据，不直接访问vif
         mnemonic = cpu_get_mnemonic(item.instruction);
         
-        // 写入trace文件（兼容Spike格式）
+        // 写入trace文件（完全兼容Spike格式）
         if (file_opened) begin
-            $fwrite(trace_fd, "core   0: 0x%08h (0x%08h) %s\n", 
-                   item.pc, item.instruction, mnemonic);
+            // 对于压缩指令，显示原始16位指令；否则显示32位指令
+            if (item.is_compressed) begin
+                // 压缩指令：第一行显示32位（补零），第二行显示16位
+                $fwrite(trace_fd, "core   0: 0x%08h (0x%08h) %s\n", 
+                       item.pc, {16'h0, item.original_instruction[15:0]}, mnemonic);
+            end else begin
+                // 标准指令：显示32位
+                $fwrite(trace_fd, "core   0: 0x%08h (0x%08h) %s\n", 
+                       item.pc, item.instruction, mnemonic);
+            end
             
-            // 记录寄存器写入
+            // 记录寄存器写入（Spike格式）
             if (m_config.log_register_changes && item.rd_we && item.rd_addr != 0) begin
-                $fwrite(trace_fd, "3 0x%08h (0x%02x) x%-2d 0x%08h\n",
-                       item.pc, item.rd_addr, item.rd_addr, item.rd_data);
+                if (item.is_compressed) begin
+                    $fwrite(trace_fd, "core   0: 3 0x%08h (0x%04h) x%-2d 0x%08h\n",
+                           item.pc, item.original_instruction[15:0], item.rd_addr, item.rd_data);
+                end else begin
+                    $fwrite(trace_fd, "core   0: 3 0x%08h (0x%08h) x%-2d 0x%08h\n",
+                           item.pc, item.instruction, item.rd_addr, item.rd_data);
+                end
             end
             
             // 记录内存访问

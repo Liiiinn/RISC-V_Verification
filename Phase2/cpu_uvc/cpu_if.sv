@@ -60,6 +60,10 @@ interface cpu_if(input logic clk, input logic rstn);
     logic [31:0] debug_rd_data;        // 目标寄存器数据
     logic        debug_rd_we;          // 寄存器写使能
     
+    // 压缩指令支持
+    logic [31:0] debug_original_instr; // 原始指令（对于压缩指令是16位，高位为0）
+    logic        debug_is_compressed;  // 是否为压缩指令
+    
     // 派生信号（在接口内部计算）
     logic debug_valid;                 // 指令有效信号
     logic debug_retired;               // 指令提交标志
