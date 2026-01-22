@@ -1,151 +1,185 @@
 `timescale 1ns/1ps
 
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+`include "clk_if.sv"
+`include "exe_if.sv"
+import tb_pkg::*;
+import common::*;
+
+
 module tb_top;
-    // Include basic packages
-    import uvm_pkg::*;
-    import tb_pkg::*;
-    `include "uvm_macros.svh"
-
-    // Include optional packages
-    import common::*;
-
-    // uVC TB signal variables
-    // Inputs
-    logic tb_clk;
-    logic tb_rstn;
-    instruction_type tb_instruction;
-    logic [31:0] tb_pc;
-    logic tb_write_en;
-    logic [4:0] tb_write_id;
-    logic [31:0] tb_write_data;
-    branch_predict_type tb_branch_in;
-    // Outputs
-    branch_predict_type tb_branch_out;
-	logic [4:0] tb_reg_rd_id;
-	logic [31:0] tb_pc_out;
-	logic [31:0] tb_read_data1;
-	logic [31:0] tb_read_data2;
-	logic [31:0] tb_immediate_data;
-	logic [31:0] tb_debug_reg[0:REGISTER_FILE_SIZE-1];
-	control_type tb_control_signals;
-
-
-    // Instantiation of CLOCK uVC interface signal
-    clk_if  i_clk_if();
-    assign tb_clk = i_clk_if.clk;
-
-    // Instantiation of RESET uVC interface signal
-    rstn_if  i_rstn_if(.clk(tb_clk));
-    assign tb_rstn = i_rstn_if.rstn;
-
-    // Instantiation of id input signal
-    id_if  i_id_if(.clk(tb_clk),.rstn(tb_rstn));
-    assign tb_instruction = i_id_if.instruction;
-    assign tb_pc = i_id_if.pc;
-    assign tb_write_en = i_id_if.write_en;
-    assign tb_write_id = i_id_if.write_id;
-    assign tb_write_data = i_id_if.write_data;
-    assign tb_branch_in = i_id_if.branch_in;
-
-    // Instantiation of id_out signal
-    id_out_if  i_id_out_if(.clk(tb_clk),.rstn(tb_rstn));
-    assign i_id_out_if.branch_out = tb_branch_out;
-    assign i_id_out_if.reg_rd_id = tb_reg_rd_id;
-    assign i_id_out_if.pc_out = tb_pc_out;
-    assign i_id_out_if.read_data1 = tb_read_data1;
-    assign i_id_out_if.read_data2 = tb_read_data2;
-    assign i_id_out_if.immediate_data = tb_immediate_data;
-    assign i_id_out_if.control_signals = tb_control_signals;
-    // assign i_id_out_if.debug_reg = tb_debug_reg;
-
-    // Instantiation
-    decode_stage inst_decode_stage(/*AUTOINST*/
-		// Outputs
-		.branch_out		(tb_branch_out),
-		.reg_rd_id		(tb_reg_rd_id), // Templated
-		.pc_out		    (tb_pc_out),	 // Templated
-		.read_data1		(tb_read_data1),	 // Templated
-		.read_data2		(tb_read_data2),	 // Templated
-		.immediate_data	(tb_immediate_data), // Templated
-		// .debug_reg		(tb_debug_reg),
-		.control_signals	(tb_control_signals), // Templated
-		
-		// Inputs
-		.clk			(tb_clk),
-		.reset_n		(tb_rstn),
-		.instruction    (tb_instruction), // Templated
-		.pc			    (tb_pc),	 // Templated
-		.write_en		(tb_write_en), // Templated
-		.write_id		(tb_write_id),	 // Templated
-		.write_data		(tb_write_data),	 // Templated
-		.branch_in		(tb_branch_in) // Templated
-    );
-
-    // Clock generation - Traditional approach
-    initial begin
-        $display("[TB_TOP @ %0t] === CLOCK GENERATION TEST START ===", $time);
-        $display("[TB_TOP @ %0t] Initializing clock to 0", $time);
-        i_clk_if.clk = 1'b0;
-        $display("[TB_TOP @ %0t] Clock initialized, value = %0b", $time, i_clk_if.clk);
-    end
+    // ===== Clock and Reset =====
+    logic clk;
+    logic rstn;
     
-    // Separate always block for clock generation (most reliable method)
-    integer clk_cycle = 0;
-    always begin
-        #5;
-        i_clk_if.clk = 1'b0;
-        // if (clk_cycle < 10) $display("[TB_TOP @ %0t] clk = 0", $time);
+    // ===== Interfaces =====
+    clk_if clk_if_inst();
+    rstn_if rstn_if_inst(clk);
+    id_if id_if_inst(clk, rstn);
+    id_out_if id_out_if_inst(clk, rstn);
+    exe_if exe_if_inst(clk, rstn);  // �?新增 EXE interface
+
+    // ===== Clock generation =====
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;  // 100MHz clock
+    end
+// ===== DUT Instantiation =====
+    // 注意：这里需要根据您的实�?DUT 模块进行连接
+    // 假设您的 DUT 包含 ID stage �?EXE stage
+    
+    // ID/EXE pipeline register signals
+    logic [31:0]         id_exe_read_data1;
+    logic [31:0]         id_exe_read_data2;
+    logic [31:0]         id_exe_immediate_data;
+    logic [4:0]          id_exe_reg_rd_id;
+    control_type         id_exe_control_signals;
+    logic [31:0]         id_exe_pc;
+    branch_predict_type  id_exe_branch_predict;
+
+    // Forwarding signals (default: no forwarding)
+    logic [1:0]          fwd_sel_rs1;
+    logic [1:0]          fwd_sel_rs2;
+    logic [31:0]         fwd_data_ex_mem;
+    logic [31:0]         fwd_data_mem_wb;
+    
+    // ID Stage (您现有的 DUT)
+    decode_stage u_id_stage (
+        .clk                (clk),
+        .reset_n            (rstn),
         
-        #5;
-        i_clk_if.clk = 1'b1;
-        clk_cycle++;
-        // if (clk_cycle <= 10) $display("[TB_TOP @ %0t] clk = 1 (cycle %0d)", $time, clk_cycle);
+        // Inputs from IF stage
+        .instruction        (id_if_inst.instruction),
+        .pc                 (id_if_inst.pc),
+        .branch_in          (id_if_inst.branch_in),
+        
+        // Writeback inputs
+        .write_en           (id_if_inst.write_en),
+        .write_id           (id_if_inst.write_id),
+        .write_data         (id_if_inst.write_data),
+        
+        // Outputs to EXE stage (ID/EXE pipeline register)
+        .read_data1         (id_exe_read_data1),
+        .read_data2         (id_exe_read_data2),
+        .immediate_data     (id_exe_immediate_data),
+        .reg_rd_id          (id_exe_reg_rd_id),
+        .control_signals    (id_exe_control_signals),
+        .pc_out             (id_exe_pc),
+        .branch_out         (id_exe_branch_predict)
+    );
+    
+    // EXE Stage (需要添加或确保已存�?
+    execute_stage u_exe_stage (
+        .clk                (clk),
+        .reset_n                  (rstn),
+        
+        // Inputs from ID/EXE pipeline register
+        .data1                    (id_exe_read_data1),
+        .data2                    (id_exe_read_data2),
+        .pc                       (id_exe_pc),
+        .immediate_data           (id_exe_immediate_data),
+        .control_in               (id_exe_control_signals),
+        .branch_predict           (id_exe_branch_predict),
+        .fwd_sel_rs1              (fwd_sel_rs1),
+        .fwd_sel_rs2              (fwd_sel_rs2),
+        .fwd_data_ex_mem          (fwd_data_ex_mem),
+        .fwd_data_mem_wb          (fwd_data_mem_wb),
+        
+        // Outputs from execute_stage
+        .control_out              (exe_if_inst.control_out),
+        .rd_data                  (exe_if_inst.rd_data),
+        .branch_target_pc         (exe_if_inst.branch_target_pc),
+        .branch_flush             (exe_if_inst.branch_flush),
+        .memory_data              (exe_if_inst.memory_data),
+        .memory_addr              (exe_if_inst.memory_addr),
+        .ex2if_branch_valid       (exe_if_inst.ex2if_branch_valid),
+        .ex2if_branch_taken       (exe_if_inst.ex2if_branch_taken),
+        .ex2if_branch_addr        (exe_if_inst.ex2if_branch_addr),
+        .ex2if_branch_target_addr (exe_if_inst.ex2if_branch_target_addr),
+        .ex2if_branch_update_GHSR (exe_if_inst.ex2if_branch_update_GHSR),
+        .ex2if_GHSR_restore       (exe_if_inst.ex2if_GHSR_restore),
+        .muldiv_ready             (exe_if_inst.muldiv_ready),
+        .exception                (exe_if_inst.exception)
+    );
+    // ===== Connect interfaces to DUT =====
+    assign clk_if_inst.clk = clk;
+        // ID stage connections (保持不变)
+    assign rstn = rstn_if_inst.rstn;
+    
+    // Connect ID output interface
+    assign id_out_if_inst.read_data1 = id_exe_read_data1;
+    assign id_out_if_inst.read_data2 = id_exe_read_data2;
+    assign id_out_if_inst.immediate_data = id_exe_immediate_data;
+    assign id_out_if_inst.reg_rd_id = id_exe_reg_rd_id;
+    assign id_out_if_inst.control_signals = id_exe_control_signals;
+    assign id_out_if_inst.pc_out = id_exe_pc;
+    assign id_out_if_inst.branch_out = id_exe_branch_predict;
+    
+    // �?Connect EXE interface (inputs from ID/EXE pipeline register)
+    assign exe_if_inst.data1 = id_exe_read_data1;
+    assign exe_if_inst.data2 = id_exe_read_data2;
+    assign exe_if_inst.immediate_data = id_exe_immediate_data;
+    assign exe_if_inst.pc = id_exe_pc;
+    assign exe_if_inst.control_in = id_exe_control_signals;
+    assign exe_if_inst.branch_predict = id_exe_branch_predict;
+    assign exe_if_inst.fwd_sel_rs1 = fwd_sel_rs1;
+    assign exe_if_inst.fwd_sel_rs2 = fwd_sel_rs2;
+    assign exe_if_inst.fwd_data_ex_mem = fwd_data_ex_mem;
+    assign exe_if_inst.fwd_data_mem_wb = fwd_data_mem_wb;
+
+    // Default forwarding
+    assign fwd_sel_rs1 = 2'b00;
+    assign fwd_sel_rs2 = 2'b00;
+    assign fwd_data_ex_mem = 32'h0;
+    assign fwd_data_mem_wb = 32'h0;
+    
+    // EXE outputs already connected above in exe_stage instantiation
+    
+    // ===== UVM Configuration =====
+    initial begin
+        top_config top_cfg;
+
+        // Bind clk interface
+        top_cfg = new("top_cfg");
+        top_cfg.m_clk_config.m_if = clk_if_inst;
+        top_cfg.m_rstn_config.m_vif = rstn_if_inst;
+        top_cfg.m_id_config.m_vif = id_if_inst;
+        top_cfg.m_id_out_config.m_vif = id_out_if_inst;
+
+        uvm_config_db#(top_config)::set(null, "tb_top", "top_config", top_cfg);
+        uvm_config_db#(rstn_config)::set(null, "*", "config", top_cfg.m_rstn_config);
+        uvm_config_db#(id_config)::set(null, "*", "config", top_cfg.m_id_config);
+        uvm_config_db#(id_out_config)::set(null, "*", "config", top_cfg.m_id_out_config);
+
+        // Set interfaces in config_db
+        uvm_config_db#(virtual rstn_if)::set(null, "*", "vif", rstn_if_inst);
+        uvm_config_db#(virtual id_if)::set(null, "*", "vif", id_if_inst);
+        uvm_config_db#(virtual id_out_if)::set(null, "*", "vif", id_out_if_inst);
+        uvm_config_db#(virtual exe_if)::set(null, "*", "vif", exe_if_inst);  // �?新增
+        
+        // Run test
+        run_test();
     end
     
-    // Simple clock monitor
-    // integer clk_edges;
-    // initial begin
-    //     clk_edges = 0;
-    //     forever begin
-    //         @(i_clk_if.clk);
-    //         clk_edges++;
-    //         if (clk_edges <= 10)
-    //             $display("[TB_TOP @ %0t] Clock edge #%0d, clk=%0b", $time, clk_edges, i_clk_if.clk);
-    //     end
-    // end
-
-    // Initialize TB configuration
+    // ===== Waveform dump =====
     initial begin
-        // Create TB top configuration and store it into UVM config DB.
-        top_config  m_top_config;
-        m_top_config = new("m_top_config");
-        i_rstn_if.rstn = 1; 
-        uvm_config_db #(top_config)::set(null,"tb_top","top_config", m_top_config);
-        // Save all virtual interface instances into configuration
-        m_top_config.m_clk_config.m_if = i_clk_if;
-        m_top_config.m_rstn_config.m_vif = i_rstn_if;
-        m_top_config.m_id_config.m_vif = i_id_if;
-        m_top_config.m_id_out_config.m_vif = i_id_out_if;
+        $dumpfile("wave.vcd");
+        $dumpvars(0, tb_top);
     end
-
-    // Start UVM test_base environment
+    
+    // ===== Timeout watchdog =====
     initial begin
-        run_test("id_test");
+        #100us;
+        `uvm_fatal("TIMEOUT", "Test timeout after 100us")
+        $finish;
     end
-
-    initial begin
-        #100000; // 100us timeout
-        $display("================================");
-        $display("Simulation timeout reached!");
-        $display("================================");
-        $finish();
-    end
-
-    int clk_count = 0;
-    always @(posedge tb_clk) begin
-        clk_count++;
-        if (clk_count % 100 == 0)
-            $display("[%0t] Clock count = %0d, rstn = %0b", $time, clk_count, tb_rstn);
-    end
-
+    
 endmodule
+
+
+
+
+
+
+

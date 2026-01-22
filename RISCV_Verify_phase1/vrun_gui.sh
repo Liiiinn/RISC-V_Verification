@@ -1,4 +1,4 @@
-TEST_NAME=${1:-id_test}
+TEST_NAME=${1:-id_exe_test}
 VERBOSITY=${2:-UVM_MEDIUM}
 
 # First compile (reuse vrun_id_test.sh compilation part)

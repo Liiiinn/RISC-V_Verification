@@ -4,6 +4,7 @@ package tb_pkg;
     import common::*;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
+
     `include "clk_config.svh"
     // `include "clk_driver.svh"
     `include "clk_agent.svh"
@@ -27,12 +28,18 @@ package tb_pkg;
     `include "id_out_monitor.svh"
     `include "id_out_agent.svh"
 
-    `include "id_ref_model.svh" 
-    `include "id_scoreboard.svh"  
+    `include "exe_seq_item.svh"
+    `include "exe_config.svh"
+    `include "exe_monitor.svh"
+    `include "exe_agent.svh"
+
+
+    `include "id_exe_ref_model.svh" 
+    `include "id_exe_scoreboard.svh"  
     `include "top_config.svh"
     `include "tb_env.svh" 
     `include "base_test.svh" 
-    `include "id_test.svh" 
+    `include "id_exe_test.svh" 
    
 
 endpackage : tb_pkg

@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Default test settings
 # TEST_NAME=${1:-top_test1}
-TEST_NAME=${1:-id_test}
+TEST_NAME=${1:-id_exe_test}
 VERBOSITY=${2:-UVM_MEDIUM}
 COVERAGE=${3:-1}  # Enable coverage by default
 
@@ -25,6 +25,7 @@ CLK_UVC_DIR="${PROJECT_ROOT}/clk_uvc"
 RSTN_UVC_DIR="${PROJECT_ROOT}/rstn_uvc"
 ID_UVC_DIR="${PROJECT_ROOT}/id_uvc"
 ID_OUT_UVC_DIR="${PROJECT_ROOT}/id_out_uvc"
+EXE_UVC_DIR="${PROJECT_ROOT}/exe_uvc"
 
 GIT_ROOT="$(cd "${PROJECT_ROOT}/.." && pwd)"  # RISC-V_Verification
 PARENT_DIR="$(cd "${GIT_ROOT}/.." && pwd)"     # ICP2
@@ -94,6 +95,7 @@ VLOG_CMD="$VLOG_CMD +incdir+${CLK_UVC_DIR}"
 VLOG_CMD="$VLOG_CMD +incdir+${RSTN_UVC_DIR}"
 VLOG_CMD="$VLOG_CMD +incdir+${ID_UVC_DIR}"
 VLOG_CMD="$VLOG_CMD +incdir+${ID_OUT_UVC_DIR}"
+VLOG_CMD="$VLOG_CMD +incdir+${EXE_UVC_DIR}"
 
 # Add coverage options if enabled
 if [ $COVERAGE -eq 1 ]; then
@@ -107,11 +109,21 @@ VLOG_CMD="$VLOG_CMD ${CLK_UVC_DIR}/clk_if.sv"
 VLOG_CMD="$VLOG_CMD ${RSTN_UVC_DIR}/rstn_if.sv"
 VLOG_CMD="$VLOG_CMD ${ID_UVC_DIR}/id_if.sv"
 VLOG_CMD="$VLOG_CMD ${ID_OUT_UVC_DIR}/id_out_if.sv"
+VLOG_CMD="$VLOG_CMD ${EXE_UVC_DIR}/exe_if.sv"
 
 # Add DUT files
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/register_file.sv"
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/control_unit.sv"
 VLOG_CMD="$VLOG_CMD ${DUT_DIR}/decode_stage.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/execute_stage.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/alu.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/bju.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/lsu.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/multiplier.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/divider.sv"
+VLOG_CMD="$VLOG_CMD ${DUT_DIR}/mul_div.sv"
+
+
 
 # Compile tb_pkg.sv
 VLOG_CMD="$VLOG_CMD ${TB_DIR}/tb_pkg.sv"

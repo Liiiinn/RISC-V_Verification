@@ -64,10 +64,10 @@ class base_test extends uvm_test;
 
         super.run_phase(phase);
         `uvm_info(get_name(),"=== Test Diagostics ===",UVM_NONE)
-        `uvm_info(get_name(),$sformatf("CLK agent: %p",m_tb_env.m_clk_agent),UVM_NONE)
+        // `uvm_info(get_name(),$sformatf("CLK agent: %p",m_tb_env.m_clk_agent),UVM_NONE)
         `uvm_info(get_name(),$sformatf("RSTN agent: %p",m_tb_env.m_rstn_agent),UVM_NONE)
         `uvm_info(get_name(),$sformatf("ID agent: %p",m_tb_env.m_id_agent),UVM_NONE)
-        `uvm_info(get_name(),$sformatf("Scoreboard: %p",m_tb_env.m_id_scoreboard),UVM_NONE)
+        // `uvm_info(get_name(),$sformatf("Scoreboard: %p",m_tb_env.m_id_scoreboard),UVM_NONE)
         `uvm_info(get_name(),$sformatf("UVM TB Starts UVM test; '%s'",get_name()),UVM_NONE)
         
         // Raise objection if no UVM test is running

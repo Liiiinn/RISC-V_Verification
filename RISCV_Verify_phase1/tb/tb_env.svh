@@ -1,102 +1,91 @@
-//------------------------------------------------------------------------------
-// tb_env class
-//
-// This class represents the environment of the TB (Test Bench) which is
-// composed by the different agents and the scoreboard
-// The environment is initialized by getting the TB configuration from the UVM
-// database and then creating all the components
-//
-// The environment connects the monitor analysis ports of the agents to the
-// scoreboard
-//
-//------------------------------------------------------------------------------
+`ifndef TB_ENV_SVH
+`define TB_ENV_SVH
+
 import uvm_pkg::*;
 `include "uvm_macros.svh"
-import tb_pkg::*; // Import the testbench package
-import common::*; // Import common definitions
+import common::*;
 
 class tb_env extends uvm_env;
     `uvm_component_utils(tb_env)
-
-    // TB configuration object with all setup for the TB environment
-    top_config   m_top_config;
-    // clock instance with clock uVC.
-    clk_agent  m_clk_agent;
-    // reset instance with reset uVC.
-    rstn_agent  m_rstn_agent;
-    // id instance with id uVC.
+    
+    // ===== Agents =====
+    rstn_agent m_rstn_agent;
     id_agent m_id_agent;
-    // id output instance with id output uVC.
     id_out_agent m_id_out_agent;
-    // scoreboard scoreboard.
-    id_scoreboard   m_id_scoreboard;
-    // reference model
-    id_ref_model    m_id_ref_model;
-
-    uvm_event end_of_stimulus_ev;
-
-    //------------------------------------------------------------------------------
-    // Creates and initializes an instance of this class using the normal
-    // constructor arguments for uvm_component.
-    //------------------------------------------------------------------------------
-    function new (string name = "tb_env" , uvm_component parent = null);
-        super.new(name,parent);
-        // Get TOP TB configuration from UVM DB
-        if ((uvm_config_db #(top_config)::get(null, "tb_top", "top_config", m_top_config))==0) begin
-            `uvm_fatal(get_name(),"Cannot find <top_config> TB configuration!")
-        end
-    endfunction : new
-
-    //------------------------------------------------------------------------------
-    // Build all the components in the TB environment
-    //------------------------------------------------------------------------------
-    function void build_phase(uvm_phase phase);
+    exe_agent m_exe_agent;  // ✅ 新增 EXE agent
+    
+    // ===== Reference Model & Scoreboard =====
+    // 可以选择保留原来的 ID-only 验证组件，或者完全切换到 ID+EXE
+    // 这里提供两种方案：
+    
+    // 方案 1: 只使用 ID+EXE 联合验证 (推荐)
+    id_exe_ref_model m_ref_model;
+    id_exe_scoreboard m_scoreboard;
+    
+    // 方案 2: 同时保留 ID-only 验证 (可选，用于对比)
+    // id_ref_model m_id_ref_model;
+    // id_scoreboard m_id_scoreboard;
+    
+    function new(string name = "tb_env", uvm_component parent = null);
+        super.new(name, parent);
+    endfunction
+    
+    virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        // Build all TB VC's
-        uvm_config_db #(clk_config)::set(this,"m_clk_agent*","config", m_top_config.m_clk_config); // 将在clk_agent的build_phase中get
-        m_clk_agent = clk_agent::type_id::create("m_clk_agent",this);
-        uvm_config_db #(clk_config)::set(this,"m_id_scoreboard","config", m_top_config.m_clk_config);
-        uvm_config_db #(rstn_config)::set(this,"m_rstn_agent*","config", m_top_config.m_rstn_config);
-        m_rstn_agent = rstn_agent::type_id::create("m_rstn_agent",this);
-        uvm_config_db #(id_out_config)::set(this,"m_id_out_agent*","config", m_top_config.m_id_out_config);
-        m_id_out_agent = id_out_agent::type_id::create("m_id_out_agent",this);
-        uvm_config_db #(id_config)::set(this,"m_id_agent*","config", m_top_config.m_id_config);
-        m_id_agent = id_agent::type_id::create("m_id_agent",this);
-        // Build scoreboard components
-        m_id_scoreboard = id_scoreboard::type_id::create("m_id_scoreboard",this);
-        // Build reference model
-        m_id_ref_model = id_ref_model::type_id::create("m_id_ref_model", this);
-        end_of_stimulus_ev = new("end_of_stimulus_ev");
-        uvm_config_db#(uvm_event)::set(this, "m_id_scoreboard","end_of_stimulus_ev", end_of_stimulus_ev);
-    endfunction : build_phase
-   
-    //------------------------------------------------------------------------------
-    // This function is used to connection the uVC monitor analysis ports to the scoreboard
-    //------------------------------------------------------------------------------
-    function void connect_phase(uvm_phase phase);
+        
+        `uvm_info(get_name(), "Building environment...", UVM_LOW)
+        
+        // ===== Build agents =====
+        m_rstn_agent = rstn_agent::type_id::create("m_rstn_agent", this);
+        m_id_agent = id_agent::type_id::create("m_id_agent", this);
+        m_id_out_agent = id_out_agent::type_id::create("m_id_out_agent", this);
+        m_exe_agent = exe_agent::type_id::create("m_exe_agent", this);  // ✅ 新增
+        
+        // ===== Build reference model & scoreboard =====
+        m_ref_model = id_exe_ref_model::type_id::create("m_ref_model", this);
+        m_scoreboard = id_exe_scoreboard::type_id::create("m_scoreboard", this);
+        
+        `uvm_info(get_name(), "Environment build complete", UVM_LOW)
+    endfunction
+    
+    virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
-        // Making all connection all analysis ports to scoreboard
-        m_rstn_agent.m_monitor.m_analysis_port.connect(m_id_scoreboard.m_rstn_ap);
-        m_id_agent.m_monitor.m_analysis_port.connect(m_id_scoreboard.m_act_id_ap);
-        m_id_out_agent.m_monitor.m_analysis_port.connect(m_id_scoreboard.m_act_id_out_ap);
-        // Connect reference model output to scoreboard
-        m_id_ref_model.id_ref_ap.connect(m_id_scoreboard.m_exp_id_out_ap);
-        // Connect id_agent monitor to reference model
-        m_id_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.analysis_imp);
-        m_rstn_agent.m_monitor.m_analysis_port.connect(m_id_ref_model.rstn_imp);
-    endfunction : connect_phase
+        
+        `uvm_info(get_name(), "Connecting environment...", UVM_LOW)
+        
+        // ===== Connect reset signal =====
+        m_rstn_agent.m_monitor.m_analysis_port.connect(m_ref_model.m_rstn_ap);
+        m_rstn_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_rstn_ap);
+        
+        // ===== Connect ID stage =====
+        // ID inputs to reference model
+        m_id_agent.m_monitor.m_analysis_port.connect(m_ref_model.m_id_ap);
+        m_id_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_id_in_ap);
 
-    virtual task run_phase(uvm_phase phase);
-        phase.raise_objection(this);
-        `uvm_info(get_name(), "tb_env run_phase started", UVM_MEDIUM);
-        // 等待 test / sequence 结束
-        phase.wait_for_state(UVM_PHASE_READY_TO_END);
-        `uvm_info(get_name(), "All stimulus finished, triggering end_of_stimulus_ev", UVM_MEDIUM);
-        end_of_stimulus_ev.trigger();
-        // 等 scoreboard drain 队列
-        repeat (5) @(posedge m_top_config.m_clk_config.m_if.clk);
-        phase.drop_objection(this);
-    endtask
+        // ID outputs: DUT actual vs. reference model expected
+        m_id_out_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_act_id_ap);
+        m_ref_model.m_exp_id_out_ap.connect(m_scoreboard.m_exp_id_ap);
+        
+        // ===== Connect EXE stage =====
+        // EXE outputs: DUT actual vs. reference model expected
+        m_exe_agent.m_monitor.m_analysis_port.connect(m_scoreboard.m_act_exe_ap);
+        m_ref_model.m_exp_exe_out_ap.connect(m_scoreboard.m_exp_exe_ap);
+        
+        `uvm_info(get_name(), "Environment connection complete", UVM_LOW)
+        `uvm_info(get_name(), "Data flow:", UVM_LOW)
+        `uvm_info(get_name(), "  RSTN Monitor -> Ref Model & Scoreboard", UVM_LOW)
+        `uvm_info(get_name(), "  ID Monitor -> Ref Model", UVM_LOW)
+        `uvm_info(get_name(), "  ID Out Monitor -> Scoreboard (actual)", UVM_LOW)
+        `uvm_info(get_name(), "  Ref Model -> Scoreboard (expected ID & EXE)", UVM_LOW)
+        `uvm_info(get_name(), "  EXE Monitor -> Scoreboard (actual)", UVM_LOW)
+    endfunction
+    
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+        
+        `uvm_info(get_name(), "Environment topology:", UVM_LOW)
+        uvm_top.print_topology();
+    endfunction
+endclass
 
-
-endclass : tb_env
+`endif

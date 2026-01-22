@@ -88,9 +88,9 @@ class id_seq_item extends uvm_sequence_item;
                 7'b0100000 := 2,
                 7'b0000001 := 6
             };
-            instruction.rd  == inside {[1:31]};
-            instruction.rs1 inside {[1:31]:/31};
-            instruction.rs2 inside {[1:31]:/31};
+            instruction.rd  inside {[1:31]};
+            instruction.rs1 inside {[1:31]};
+            instruction.rs2 inside {[1:31]};
             // instruction.rs2 == reg_id;
             write_en == 1;
             (instruction.funct7 == 7'b0000000) ->{
